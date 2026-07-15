@@ -4,3 +4,39 @@
 * {
   font-family: "Switzer", sans-serif;
 }
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #F2F3F1;
+  color: #12141C;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Visible keyboard focus everywhere */
+:focus-visible {
+  outline: 2px solid #DC9F3D;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Perforated edge used on the deadline-card motif */
+.perforated-edge {
+  background-image: radial-gradient(circle, #F2F3F1 2px, transparent 2.5px);
+  background-size: 14px 14px;
+  background-position: -3px center;
+  height: 6px;
+}
