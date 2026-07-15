@@ -1,6 +1,6 @@
 export default function Hero() {
   return (
-    <section id="top" className="relative overflow-hidden bg-paper">
+    <section id="top" className="flex py-46 bg-paper">
       <div className="mx-auto grid max-w-content items-center gap-14 px-6 pb-20 pt-16 md:px-10 md:pb-28 md:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
         {/* Left: thesis */}
         <div>
@@ -8,7 +8,7 @@ export default function Hero() {
             Renewal management for teams
           </p>
 
-          <h1 className="max-w-xl font-display text-[2.5rem] font-medium leading-[1.08] tracking-tight text-ink sm:text-5xl md:text-[3.4rem]">
+          <h1 className="max-w-xl font-display text-xl font-medium leading-[1.08] tracking-tight text-ink sm:text-5xl md:text-5xl">
             The date that matters isn&apos;t your renewal date.
           </h1>
 
@@ -22,7 +22,7 @@ export default function Hero() {
           <div id="hero-cta" className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
             <a
               href="#how-it-works"
-              className="rounded-[4px] bg-ink px-6 py-3 text-center font-body text-[15px] font-medium text-paper transition-colors hover:bg-navy"
+              className="rounded-[4px] bg-[#12141C] px-6 py-3 text-center font-body text-[15px] font-medium text-[#F2F3F1] transition-colors hover:bg-navy"
             >
               Start tracking contracts
             </a>
