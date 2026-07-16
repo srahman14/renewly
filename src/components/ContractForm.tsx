@@ -2,6 +2,24 @@
 
 import { useState } from "react";
 import { Contract } from "@/app/dashboard/page";
+import { format } from "date-fns";
+import { ChevronDownIcon } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 
 interface Props {
@@ -19,19 +37,18 @@ export default function ContractForm({
 
 
   const [form, setForm] = useState({
-
   company: initialData?.company ?? "",
   name: initialData?.name ?? "",
-  monthlySpend: initialData?.monthlySpend ?? 0,
+  monthlySpend: initialData?.monthlySpend?.toString() ?? "",
   cycle: initialData?.cycle ?? "",
-  renewalDate: "",
+  renewalDate: initialData?.renewsOn
+    ? new Date(initialData.renewsOn).toISOString().split("T")[0]
+    : "",
   owner: initialData?.owner ?? "",
   team: initialData?.team ?? "",
   category: initialData?.category ?? "",
-  noticeDays: initialData?.noticeDays ?? "",
-
+  noticeDays: initialData?.noticeDays?.toString() ?? "",
 });
-
 
 
   const [error,setError] = useState("");
@@ -39,16 +56,14 @@ export default function ContractForm({
 
 
   function update(
-    field:string,
-    value:string | number
-  ){
-
-    setForm(previous=>({
-      ...previous,
-      [field]:value
-    }));
-
-  }
+  field: string,
+  value: string | number | null
+){
+  setForm(previous => ({
+    ...previous,
+    [field]: value ?? ""
+  }));
+}
 
 
 
@@ -60,9 +75,12 @@ export default function ContractForm({
 
     if(
       !form.company ||
-      !form.monthlySpend ||
+      form.monthlySpend === "" ||
+      form.monthlySpend === null ||
       !form.renewalDate ||
-      !form.owner
+      !form.owner ||
+      form.noticeDays === "" ||
+      form.noticeDays === null
     ){
 
       setError(
@@ -185,7 +203,7 @@ export default function ContractForm({
   setForm({
     company: "",
     name: "",
-    monthlySpend: 0,
+    monthlySpend: "",
     cycle: "",
     renewalDate: "",
     owner: "",
@@ -286,22 +304,23 @@ className="w-full rounded border px-3 py-2"
 
 
 <input
+  type="number"
+  min="0"
+  step="0.01"
+  placeholder="Monthly cost *"
 
-type="number"
+  value={form.monthlySpend}
 
-placeholder="Monthly cost *"
+  onChange={
+    e=>update(
+      "monthlySpend",
+      e.target.value === ""
+      ? ""
+      : Number(e.target.value)
+    )
+  }
 
-value={form.monthlySpend === 0 ? "" : form.monthlySpend}
-
-onChange={
-e=>update(
-"monthlySpend",
-Number(e.target.value)
-)
-}
-
-className="w-full rounded border px-3 py-2"
-
+  className="w-full rounded border px-3 py-2"
 />
 
 
@@ -309,58 +328,71 @@ className="w-full rounded border px-3 py-2"
 
 
 
-<select
-
-value={form.cycle}
-
-onChange={
-e=>update(
-"cycle",
-e.target.value
-)
-}
-
-className={`w-full rounded border px-3 py-2 ${
-  form.cycle ? "text-grey" : "text-gray-500"
-}`}
-
+<Select
+  value={form.cycle}
+  onValueChange={(value) => update("cycle", value)}
 >
+  <SelectTrigger className="w-full">
+    <SelectValue placeholder="Billing cycle *" />
+  </SelectTrigger>
 
-<option value="" disabled>
-Billing cycle
-</option>
+  <SelectContent>
+    <SelectItem value="Monthly">
+      Monthly
+    </SelectItem>
 
-<option value="Monthly">
-Monthly
-</option>
+    <SelectItem value="Quarterly">
+      Quarterly
+    </SelectItem>
 
-<option value="Quarterly">
-Quarterly
-</option>
-
-<option value="Annual">
-Annual
-</option>
-
-</select>
-
-
+    <SelectItem value="Annual">
+      Annual
+    </SelectItem>
+  </SelectContent>
+</Select>
 
 
 
 
-<input
-  type="date"
-  value={form.renewalDate}
-  onChange={(e)=>{
-    console.log("DATE VALUE:", e.target.value);
-    update("renewalDate", e.target.value);
-  }}
-  className="w-full rounded border border-line px-3 py-2 text-ink"
-/>
 
+<Popover>
+  <PopoverTrigger>
+    <Button
+      type="button"
+      variant="outline"
+      className="w-full justify-between text-left font-normal"
+    >
+      {form.renewalDate ? (
+        format(new Date(form.renewalDate), "PPP")
+      ) : (
+        <span className="text-gray-500">
+          Pick renewal date *
+        </span>
+      )}
 
+      <ChevronDownIcon className="h-4 w-4" />
+    </Button>
+  </PopoverTrigger>
 
+  <PopoverContent className="w-auto p-0" align="start">
+    <Calendar
+      mode="single"
+      selected={
+        form.renewalDate
+          ? new Date(form.renewalDate)
+          : undefined
+      }
+      onSelect={(date) => {
+        update(
+          "renewalDate",
+          date
+            ? date.toISOString().split("T")[0]
+            : ""
+        );
+      }}
+    />
+  </PopoverContent>
+</Popover>
 
 
 <input
@@ -410,8 +442,9 @@ className="w-full rounded border px-3 py-2"
 <input
 
 type="number"
+min = "0"
 
-placeholder="Cancellation notice days"
+placeholder="Cancellation notice days *"
 
 value={form.noticeDays}
 
