@@ -13,7 +13,7 @@ const SOCIALS = [
 
 export default function Footer() {
   return (
-    <footer className="mt-80 bg-ink">
+    <footer className="mt-0  bg-ink">
       {/* CTA band */}
       <div className="mx-auto grid max-w-7xl items-center gap-10 px-6 py-16 md:px-10 md:py-20 lg:grid-cols-[1fr_0.8fr]">
         <div>
@@ -114,12 +114,12 @@ export default function Footer() {
             href="#top"
             className="flex items-center gap-2 font-display text-lg font-medium tracking-tight text-paper"
           >
-            <span
+            {/* <span
               aria-hidden="true"
               className="flex h-7 w-7 items-center justify-center rounded-[4px] bg-amber text-[13px] font-mono text-ink"
             >
               R
-            </span>
+            </span> */}
             Renewly
           </a>
 

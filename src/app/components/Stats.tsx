@@ -19,8 +19,8 @@ const STATS = [
 
 export default function Stats() {
   return (
-    <section className="bg-paper py-20 md:py-24">
-      <div className="mx-auto max-w-content px-6 md:px-10">
+    <section className="w-full bg-paper py-20 md:py-24">
+      <div className="mx-auto  px-6 md:px-10">
         <div className="max-w-xl">
           <p className="font-mono text-[12px] uppercase tracking-[0.1em] text-ink/45">
             Why this is worth solving
