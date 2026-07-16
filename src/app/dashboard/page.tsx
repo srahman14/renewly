@@ -501,6 +501,30 @@ className="inline-block self-start rounded-[4px] bg-amber px-5 py-2.5 font-body 
 
 {/* Empty state */}
 
+<dl className="mt-10 grid grid-cols-1 gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+
+<StatCard
+label="Tracked contracts"
+value={String(totals.count)}
+/>
+
+<StatCard
+label="Monthly recurring spend"
+value={currency(totals.monthlySpend)}
+footnote="normalised monthly cost"
+/>
+
+<StatCard
+label="Deadlines in 30 days"
+value={String(totals.upcoming)}
+/>
+
+<StatCard
+label="Flagged for review"
+value={String(totals.flagged)}
+/>
+
+</dl>
 
 {contracts.length === 0 ? (
 
@@ -538,38 +562,7 @@ Add your first contract
 <>
 
 
-{/* Stats */}
 
-
-<dl className="mt-10 grid grid-cols-1 gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
-
-
-<StatCard
-label="Tracked contracts"
-value={String(totals.count)}
-/>
-
-
-<StatCard
-label="Monthly recurring spend"
-value={currency(totals.monthlySpend)}
-footnote="normalised monthly cost"
-/>
-
-
-<StatCard
-label="Deadlines in 30 days"
-value={String(totals.upcoming)}
-/>
-
-
-<StatCard
-label="Flagged for review"
-value={String(totals.flagged)}
-/>
-
-
-</dl>
 
 
 
