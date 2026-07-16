@@ -453,7 +453,6 @@ Last safe cancel date
 return (
 <div className="min-h-screen bg-paper-muted">
 
-<Navbar />
 
 
 <main className="mx-auto max-w-7xl px-6 py-10 md:px-10 md:py-14">
