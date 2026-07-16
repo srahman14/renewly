@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "../globals.css";
-import Navbar from "../../components/Navbar";
-import Footer from "../../components/Footer";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: "renewly",
@@ -14,10 +14,10 @@ export default function LandingLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <main className="flex w-full min-w-0 flex-1 flex-col">
+    <div>
       <Navbar />
       {children}
       <Footer />
-    </main>
+    </div>
   );
 }
