@@ -1,6 +1,64 @@
 @import url('https://fonts.cdnfonts.com/css/switzer');
 @import "tailwindcss";
 
+@theme {
+  --color-ink: #12141C;
+  --color-paper: #F2F3F1;
+  --color-paper-muted: #E7E5DD;
+
+  --color-navy: #1E2A45;
+  --color-navy-light: #2B3A5C;
+
+  --color-amber: #DC9F3D;
+  --color-amber-light: #F0C888;
+
+  --color-teal: #1F7A6C;
+  --color-teal-light: #5FA79A;
+
+  --color-line: #D8D6CE;
+  --color-line-dark: #33405E;
+
+  --font-display: var(--font-fraunces);
+  --font-body: var(--font-work-sans);
+  --font-mono: var(--font-plex-mono);
+}
+
 * {
   font-family: "Switzer", sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #F2F3F1;
+  color: #12141C;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Visible keyboard focus everywhere */
+:focus-visible {
+  outline: 2px solid #DC9F3D;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Perforated edge used on the deadline-card motif */
+.perforated-edge {
+  background-image: radial-gradient(circle, #F2F3F1 2px, transparent 2.5px);
+  background-size: 14px 14px;
+  background-position: -3px center;
+  height: 6px;
 }

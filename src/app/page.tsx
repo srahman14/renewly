@@ -1,11 +1,21 @@
-import Image from "next/image";
+import Navbar from "./components/Navbar";
+import Hero from "./components/Hero";
+import Hook from "./components/Hook";
+import Stats from "./components/Stats";
+import Purpose from "./components/Purpose";
+import HowItWorks from "./components/HowItWorks";
+import FAQ from "./components/FAQ";
+import Footer from "./components/Footer";
 
 export default function Home() {
   return (
-    <main className="flex items-center justify-center min-h-screen">
-      <div>
-        <p className="text-4xl tracking-tight font-medium">Home page</p>
-      </div>
+    <main className="flex flex-col items-center mx-auto justify-center bg-paper font-body">
+      <Hero />
+      <Hook />
+      <Stats />
+      <Purpose />
+      <HowItWorks />
+      <FAQ />
     </main>
   );
 }
