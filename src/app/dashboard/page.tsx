@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import ContractForm from "./components/ContractForm";
-import Navbar from "./components/Navbar";
+import ContractForm from "@/components/ContractForm";
+import Navbar from "@/components/DashboardNavbar";
 
 type Status = "active" | "flagged" | "cancelled";
 type Cycle = "Monthly" | "Quarterly" | "Annual";
