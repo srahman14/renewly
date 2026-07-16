@@ -9,7 +9,7 @@ import Footer from "./components/Footer";
 
 export default function Home() {
   return (
-    <main className="flex flex-col items-center mx-auto justify-center max-w-7xl bg-paper font-body">
+    <main className="flex flex-col items-center mx-auto justify-center bg-paper font-body">
       <Hero />
       <Hook />
       <Stats />

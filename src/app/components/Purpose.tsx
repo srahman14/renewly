@@ -1,7 +1,7 @@
 export default function Purpose() {
   return (
-    <section id="purpose" className="bg-paper-muted py-20 md:py-28">
-      <div className="mx-auto grid max-w-content gap-12 px-6 md:px-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
+    <section id="purpose" className="w-full bg-paper-muted py-20 md:py-28">
+      <div className="mx-auto grid max-w-7xl gap-12 px-6 md:px-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
         <div>
           <p className="font-mono text-[12px] uppercase tracking-[0.1em] text-ink/45">
             Why Renewly exists

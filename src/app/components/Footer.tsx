@@ -13,9 +13,9 @@ const SOCIALS = [
 
 export default function Footer() {
   return (
-    <footer className="bg-[#12141C]">
+    <footer className="mt-0  bg-ink">
       {/* CTA band */}
-      <div className="mx-auto grid max-w-7xl items-center gap-10 px-6 py-16 md:px-10 md:py-20 lg:grid-cols-[1fr_0.8fr] text-white">
+      <div className="mx-auto grid max-w-7xl items-center gap-10 px-6 py-16 md:px-10 md:py-20 lg:grid-cols-[1fr_0.8fr]">
         <div>
           <h2 className="max-w-md font-display text-3xl font-medium leading-[1.15] tracking-tight text-paper sm:text-4xl">
             Stop losing money to dates you didn&apos;t track.
@@ -108,7 +108,7 @@ export default function Footer() {
       </div>
 
       {/* Nav row */}
-      <div className="text-white">
+      <div className="border-t border-line-dark">
         <div className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-10 md:flex-row md:items-start md:justify-between md:px-10">
           <a
             href="#top"
@@ -137,8 +137,8 @@ export default function Footer() {
         </div>
 
         {/* Bottom row */}
-        <div className="">
-          <div className="mx-auto flex max-w-7xl flex-col-reverse items-center gap-4 px-6 py-6 text-center md:flex-row md:justify-between md:px-10 md:text-left">
+        <div className="border-t border-line-dark">
+          <div className="mx-auto flex max-w-content flex-col-reverse items-center gap-4 px-6 py-6 text-center md:flex-row md:justify-between md:px-10 md:text-left">
             <p className="font-mono text-xs text-paper/40">
               © {new Date().getFullYear()} Renewly. All rights reserved.
             </p>

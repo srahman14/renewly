@@ -1,7 +1,7 @@
 export default function Hook() {
   return (
-    <section className="bg-navy py-20 md:py-28">
-      <div className="mx-auto max-w-content px-6 md:px-10">
+    <section className="w-full bg-navy mt-40 mb-24 md:py-28">
+      <div className="container mx-auto max-w-7xl px-6 md:px-10">
         <p className="font-mono text-[12px] uppercase tracking-[0.12em] text-amber-light/70">
           Nobody notices until the charge does
         </p>
