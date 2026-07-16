@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Contract } from "../../(main)/page";
+import { Contract } from "@/app/dashboard/page";
 
 
 interface Props {
