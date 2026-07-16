@@ -56,16 +56,14 @@ export default function ContractForm({
 
 
   function update(
-    field:string,
-    value:string | number
-  ){
-
-    setForm(previous=>({
-      ...previous,
-      [field]:value
-    }));
-
-  }
+  field: string,
+  value: string | number | null
+){
+  setForm(previous => ({
+    ...previous,
+    [field]: value ?? ""
+  }));
+}
 
 
 
@@ -358,7 +356,7 @@ className="w-full rounded border px-3 py-2"
 
 
 <Popover>
-  <PopoverTrigger asChild>
+  <PopoverTrigger>
     <Button
       type="button"
       variant="outline"
@@ -384,7 +382,7 @@ className="w-full rounded border px-3 py-2"
           ? new Date(form.renewalDate)
           : undefined
       }
-      onSelect={(date)=>{
+      onSelect={(date) => {
         update(
           "renewalDate",
           date
@@ -395,8 +393,6 @@ className="w-full rounded border px-3 py-2"
     />
   </PopoverContent>
 </Popover>
-
-
 
 
 <input
