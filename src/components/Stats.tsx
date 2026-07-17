@@ -1,26 +1,31 @@
+import Link from "next/link";
+
 const STATS = [
   {
-    value: "1 in 3",
-    label: "team subscriptions renew without anyone reviewing the terms first",
+    value: "69%",
+    label:
+      "of software contracts include an auto-renewal clause with a 30–90 day cancellation notice window",
   },
   {
-    value: "60 days",
-    label: "the typical notice window buried in a standard SaaS contract",
+    value: "25%",
+    label:
+      "average overspend on SaaS when contracts and entitlements aren't centrally tracked",
   },
   {
-    value: "37%",
-    label: "of recurring tool spend goes to contracts nobody remembers signing",
+    value: "25",
+    label: "active subscriptions the typical company is juggling at once",
   },
   {
-    value: "$18.4K",
-    label: "recovered per year, on average, by teams who catch the window in time",
+    value: "51%",
+    label:
+      "of enterprise SaaS licenses go completely unused — the highest waste rate on record",
   },
 ];
 
 export default function Stats() {
   return (
     <section className="w-full bg-paper py-20 md:py-24">
-      <div className="mx-auto  px-6 md:px-10">
+      <div className="mx-auto max-w-7xl px-6 md:px-10">
         <div className="max-w-xl">
           <p className="font-mono text-[12px] uppercase tracking-[0.1em] text-ink/45">
             Why this is worth solving
@@ -32,21 +37,23 @@ export default function Stats() {
 
         <dl className="mt-14 grid grid-cols-1 gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
           {STATS.map((stat) => (
-            <div key={stat.label} className="bg-paper px-6 py-8">
+            <div key={stat.label} className="bg-navy px-6 py-8">
               <dt className="sr-only">{stat.label}</dt>
-              <dd className="font-mono text-3xl text-ink sm:text-[2.25rem]">
+              <dd className="font-mono text-3xl text-amber/90 tracking-tighter sm:text-[2.25rem]">
                 {stat.value}
               </dd>
-              <p className="mt-3 font-body text-sm leading-relaxed text-ink/60">
+              <p className="mt-3 font-body text-sm leading-relaxed text-white">
                 {stat.label}
               </p>
             </div>
           ))}
         </dl>
 
-        <p className="mt-6 font-body text-xs text-ink/35">
-          Illustrative figures based on typical SaaS renewal patterns.
-        </p>
+        <Link href={"/sources"}>
+          <p className="mt-6 w-24 text-xs cursor-pointer hover:text-ink/50 font-body text-ink/20 underline underline-offset-4 decoration-gray-300/60">
+            See sources
+          </p>
+        </Link>
       </div>
     </section>
   );

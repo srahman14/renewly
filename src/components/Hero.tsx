@@ -1,6 +1,6 @@
 export default function Hero() {
   return (
-    <section id="top" className="py-40 bg-paper">
+    <section id="top" className="py-8 md:py-40 bg-paper">
       <div className="mx-auto grid max-w-content items-center gap-10 px-6 pb-16 pt-14 sm:gap-12 sm:pb-20 sm:pt-16 md:grid-cols-[1fr_0.9fr] md:gap-8 md:px-10 md:pb-24 md:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:pb-28">
         {/* Left: thesis */}
         <div>

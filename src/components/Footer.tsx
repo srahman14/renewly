@@ -1,7 +1,12 @@
 const FOOTER_LINKS = [
   { label: "Purpose", href: "#purpose" },
   { label: "How it works", href: "#how-it-works" },
-  { label: "FAQ", href: "#faq" },
+  { label: "Register", href: "/register" },
+];
+
+const COMPANY_LINKS = [
+  { label: "Privacy policy", href: "/privacy" },
+  { label: "T&Cs", href: "/terms" },
   { label: "Contact", href: "mailto:hello@renewly.app" },
 ];
 
@@ -123,8 +128,10 @@ export default function Footer() {
             Renewly
           </a>
 
-          <nav aria-label="Footer" className="flex flex-wrap gap-x-8 gap-y-3">
-            {FOOTER_LINKS.map((link) => (
+          <nav aria-label="Footer" className="grid grid-cols-3 md:grid-cols-3 gap-8 md:gap-x-12">
+            <div className="flex flex-col flex-wrap gap-x-8 gap-y-2">
+              <h3 className="text-white">Product</h3>
+              {FOOTER_LINKS.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
@@ -133,6 +140,33 @@ export default function Footer() {
                 {link.label}
               </a>
             ))}
+            </div>
+            <div className="flex flex-col flex-wrap gap-x-8 gap-y-2">
+              <h3 className="text-white">Company</h3>
+              {COMPANY_LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="font-body text-sm text-paper/60 transition-colors hover:text-paper"
+              >
+                {link.label}
+              </a>
+            ))}
+            </div>
+            <div className="flex flex-col flex-wrap gap-x-8 gap-y-3">
+              <h3 className="text-white">Support</h3>
+              <a
+                className="font-body text-sm text-paper/60 transition-colors hover:text-paper"
+              >
+                Help
+              </a>
+              <a
+                className="font-body text-sm text-paper/60 transition-colors hover:text-paper"
+              >
+                FAQ
+              </a>
+            </div>
+            
           </nav>
         </div>
 

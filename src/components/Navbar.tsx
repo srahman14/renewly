@@ -18,7 +18,7 @@ export default function Navbar() {
         aria-label="Primary"
       >
         <a
-          href="#top"
+          href="/"
           className="flex items-center gap-2 font-display text-xl font-medium tracking-tight text-ink"
         >
           {/* <span
@@ -44,13 +44,13 @@ export default function Navbar() {
 
         <div className="hidden items-center gap-4 md:flex">
           <a
-            href="#faq"
+            href="/login"
             className="font-body text-[15px] text-ink/70 transition-colors hover:text-ink"
           >
             Sign in
           </a>
           <a
-            href="#hero-cta"
+            href="/register"
             className="rounded-[4px] bg-ink px-4 py-2 font-body text-[15px] font-medium text-paper transition-colors hover:bg-navy"
           >
             Get started free
