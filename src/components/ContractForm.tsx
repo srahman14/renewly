@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Contract } from "@/app/dashboard/page";
+import { Contract, CATEGORIES } from "@/lib/contracts";
 import { format } from "date-fns";
 import { ChevronDownIcon } from "lucide-react";
 
@@ -79,6 +79,7 @@ export default function ContractForm({
       form.monthlySpend === null ||
       !form.renewalDate ||
       !form.owner ||
+      !form.category ||
       form.noticeDays === "" ||
       form.noticeDays === null
     ){
@@ -185,7 +186,13 @@ export default function ContractForm({
       status:
         daysLeft <= 30
         ? "flagged"
-        : "active"
+        : "active",
+
+
+      // keep the original creation date when editing, stamp a new one when adding
+      createdAt:
+        initialData?.createdAt ??
+        new Date().toISOString()
 
     };
 
@@ -354,6 +361,29 @@ className="w-full rounded border px-3 py-2"
 
 
 
+<Select
+  value={form.category}
+  onValueChange={(value) => update("category", value)}
+>
+  <SelectTrigger className="w-full">
+    <SelectValue placeholder="Category *" />
+  </SelectTrigger>
+
+  <SelectContent>
+    {CATEGORIES.map(({ value, label, icon: Icon }) => (
+      <SelectItem key={value} value={value}>
+        <div className="flex items-center gap-2">
+          <Icon className="h-4 w-4 text-ink/60" />
+          {label}
+        </div>
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
+
+
+
+
 
 <Popover>
   <PopoverTrigger>
@@ -419,7 +449,7 @@ className="w-full rounded border px-3 py-2"
 
 <input
 
-placeholder="Team / Category"
+placeholder="Team (optional)"
 
 value={form.team}
 

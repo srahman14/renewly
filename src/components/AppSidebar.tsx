@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import {
   Sidebar,
   SidebarContent,
@@ -81,9 +82,9 @@ const analyticsNav: NavItem = { title: "Spend Analytics", url: "/analytics", ico
 const alertsNav: NavItem = { title: "Alerts", url: "/alerts", icon: Bell, badge: "5" }
 
 const contractsSubNav = [
-  { title: "All Contracts", url: "/contracts" },
-  { title: "By Category", url: "/contracts?view=category" },
-  { title: "Archived", url: "/contracts?view=archived" },
+  { title: "All Contracts", url: "/dashboard/contracts" },
+  { title: "By Category", url: "/dashboard/contracts?view=category" },
+  { title: "Archived", url: "/dashboard/contracts?view=archived" },
 ]
 
 const orgNav = [
@@ -167,7 +168,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {/* Dashboard */}
               <SidebarMenuItem>
-                <SidebarMenuButton render={<a href="/dashboard" />}>
+                <SidebarMenuButton render={<Link href="/dashboard" />}>
                   <LayoutDashboard />
                   <span>Dashboard</span>
                 </SidebarMenuButton>
@@ -186,7 +187,7 @@ export function AppSidebar() {
                     <SidebarMenuSub>
                       {contractsSubNav.map((sub) => (
                         <SidebarMenuSubItem key={sub.title}>
-                          <SidebarMenuSubButton render={<a href={sub.url} />}>
+                          <SidebarMenuSubButton render={<Link href={sub.url} />}>
                             <span>{sub.title}</span>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
@@ -199,7 +200,7 @@ export function AppSidebar() {
               {/* Remaining flat items */}
               {[renewalsNav, analyticsNav, alertsNav].map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton render={<a href={item.url} />}>
+                  <SidebarMenuButton render={<Link href={item.url} />}>
                     <item.icon />
                     <span>{item.title}</span>
                   </SidebarMenuButton>
@@ -226,7 +227,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                   {orgNav.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton render={<a href={item.url} />}>
+                      <SidebarMenuButton render={<Link href={item.url} />}>
                         <item.icon />
                         <span>{item.title}</span>
                       </SidebarMenuButton>
@@ -253,7 +254,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                   {helpNav.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton render={<a href={item.url} />}>
+                      <SidebarMenuButton render={<Link href={item.url} />}>
                         <item.icon />
                         <span>{item.title}</span>
                       </SidebarMenuButton>
