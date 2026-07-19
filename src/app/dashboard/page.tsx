@@ -4,46 +4,48 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import ContractForm from "@/components/ContractForm";
+import ContractDetailsDialog from "@/components/ContractDetailsDialog";
 import {
   Contract,
   Status,
   STORAGE_KEY,
   currency,
+  formatDate,
+  getNextRenewalDate,
+  getDeadlineDate,
+  daysUntilRenewal,
+  daysUntilDeadline,
+  deadlineLabel,
+  daysUntilRenewalLabel,
+  isFlagged,
 } from "@/lib/contracts";
-import { DeadlinePill, StatusDot, CategoryBadge, ActionsMenu } from "@/components/ContractUI";
+import { DeadlinePill, RenewalWarningBadge, StatusDot, CategoryBadge, ActionsMenu, DeleteConfirmDialog } from "@/components/ContractUI";
 
 // How many rows show on the overview before sending people to /dashboard/contracts.
 // Full search/filter/sort now lives only on that page — this is a glance, not a workspace.
 const PREVIEW_COUNT = 4;
 
-// Reads localStorage synchronously during state init instead of in a
-// separate effect. This matters: with a load-effect + save-effect split,
-// React runs both effects in the same pass on mount — the save effect
-// fires with the still-empty initial state a moment before the load
-// effect's data arrives, overwriting real contracts with `[]`. That race
-// is what was wiping data on every navigation/remount (and is exactly
-// what React Strict Mode's dev-mode double-invoke exposes reliably).
-// Reading here, during the initializer, means there's no in-between
-// state for a save effect to catch.
-function loadContracts(): Contract[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
-  } catch {
-    return [];
-  }
-}
-
 export default function DashboardPage() {
-  const [contracts, setContracts] = useState<Contract[]>(loadContracts);
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [hasHydrated, setHasHydrated] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
+  const [viewingContract, setViewingContract] = useState<Contract | null>(null);
+  const [deletingContract, setDeletingContract] = useState<Contract | null>(null);
 
-  // Save whenever contracts change. No separate load effect — see loadContracts() above.
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) setContracts(JSON.parse(saved));
+    } finally {
+      setHasHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(contracts));
-  }, [contracts]);
+  }, [contracts, hasHydrated]);
 
   function saveContract(contract: Contract) {
     setContracts((previous) => {
@@ -57,33 +59,31 @@ export default function DashboardPage() {
     setEditingContract(null);
   }
 
-  // Soft: marks a contract cancelled but keeps it in your data
   function cancelContract(id: string) {
     setContracts((previous) =>
       previous.map((item) => (item.id === id ? { ...item, status: "cancelled" as Status } : item))
     );
   }
 
-  // Hard: permanently removes the contract
   function deletePermanently(id: string) {
     setContracts((previous) => previous.filter((item) => item.id !== id));
   }
 
   const totals = useMemo(() => {
     const active = contracts.filter((c) => c.status !== "cancelled");
-
     return {
       count: active.length,
       monthlySpend: active.reduce((sum, c) => sum + c.monthlySpend, 0),
-      upcoming: active.filter((c) => c.daysLeft <= 30).length,
-      flagged: contracts.filter((c) => c.status === "flagged").length,
+      upcoming: active.filter((c) => daysUntilRenewal(c) <= 30).length,
+      flagged: active.filter((c) => isFlagged(c)).length,
     };
   }, [contracts]);
 
-  // Sorted once, reused for both the "closest deadlines" cards and the
-  // capped preview list below — soonest-deadline-first in both places.
   const sortedByDeadline = useMemo(
-    () => [...contracts].filter((c) => c.status !== "cancelled").sort((a, b) => a.daysLeft - b.daysLeft),
+    () =>
+      [...contracts]
+        .filter((c) => c.status !== "cancelled")
+        .sort((a, b) => daysUntilDeadline(a) - daysUntilDeadline(b)),
     [contracts]
   );
 
@@ -133,9 +133,13 @@ export default function DashboardPage() {
           </p>
 
           <div className="mt-1 flex items-baseline justify-between">
-            <p className="font-mono text-base text-paper">{contract.deadline}</p>
-            <p className="font-mono text-[11px] text-amber-light">{contract.daysLeft}d left</p>
+            <p className="font-mono text-base text-paper">{formatDate(getDeadlineDate(contract))}</p>
+            <p className="font-mono text-[11px] text-amber-light">{deadlineLabel(contract)}</p>
           </div>
+        </div>
+
+        <div className="px-5 pb-4">
+          <RenewalWarningBadge contract={contract} />
         </div>
       </div>
     );
@@ -152,7 +156,9 @@ export default function DashboardPage() {
               Good morning.
             </h1>
             <p className="mt-2 max-w-lg font-body text-[15px] leading-relaxed text-ink/60">
-              {contracts.length === 0
+              {!hasHydrated
+                ? "\u00A0"
+                : contracts.length === 0
                 ? "Start tracking your subscriptions and avoid unexpected renewals."
                 : `${totals.upcoming} contract${totals.upcoming === 1 ? "" : "s"} need a decision in the next 30 days.`}
             </p>
@@ -178,7 +184,11 @@ export default function DashboardPage() {
           <StatCard label="Flagged for review" value={String(totals.flagged)} />
         </dl>
 
-        {contracts.length === 0 ? (
+        {!hasHydrated ? (
+          <div className="mt-14 rounded-md border border-line bg-white px-6 py-16 text-center">
+            <p className="font-mono text-sm text-ink/40">Loading contracts…</p>
+          </div>
+        ) : contracts.length === 0 ? (
           <div className="mt-14 rounded-md border border-line bg-white px-6 py-16 text-center">
             <h2 className="font-display text-2xl font-medium text-ink">Welcome to Renewal Radar</h2>
             <p className="mx-auto mt-3 max-w-md font-body text-sm text-ink/60">
@@ -205,9 +215,7 @@ export default function DashboardPage() {
               </div>
             </section>
 
-            {/* Contracts preview — capped on purpose. Full search/filter/sort
-                lives on /dashboard/contracts; this is a glance, not a
-                second copy of that page. */}
+            {/* Contracts preview */}
             <section className="mt-14">
               <div className="flex items-center justify-between">
                 <Link
@@ -234,29 +242,36 @@ export default function DashboardPage() {
                       className="grid gap-4 px-6 py-5 md:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] md:items-center"
                     >
                       <div className="flex items-center gap-3">
-                        <StatusDot status={contract.status} />
+                        <StatusDot contract={contract} />
                         <div>
                           <p className="font-body font-medium text-ink">{contract.company}</p>
                           <p className="text-sm text-ink/50">{contract.name}</p>
                         </div>
                       </div>
 
-                      <p className="font-mono text-sm text-ink/60">£{contract.monthlySpend}/mo</p>
+                      <p className="font-mono text-sm text-ink/60">{currency(contract.monthlySpend)}/mo</p>
 
-                      <p className="font-mono text-sm text-ink/60">{contract.renewsOn}</p>
+                      <p className="font-mono text-sm text-ink/60">{formatDate(getNextRenewalDate(contract))}</p>
 
                       <CategoryBadge category={contract.category} />
 
-                      <DeadlinePill daysLeft={contract.daysLeft} />
+                      <div className="flex flex-wrap items-center gap-2">
+                        <DeadlinePill contract={contract} />
+                        <RenewalWarningBadge contract={contract} />
+                        <span className="font-mono text-[11px] text-ink/35">
+                          {daysUntilRenewalLabel(contract)}
+                        </span>
+                      </div>
 
                       <ActionsMenu
                         isCancelled={contract.status === "cancelled"}
+                        onViewDetails={() => setViewingContract(contract)}
                         onEdit={() => {
                           setEditingContract(contract);
                           setShowForm(true);
                         }}
                         onCancel={() => cancelContract(contract.id)}
-                        onDeletePermanently={() => deletePermanently(contract.id)}
+                        onDeletePermanently={() => setDeletingContract(contract)}
                       />
                     </div>
                   ))}
@@ -283,6 +298,29 @@ export default function DashboardPage() {
             onClose={() => {
               setShowForm(false);
               setEditingContract(null);
+            }}
+          />
+        )}
+
+        {viewingContract && (
+          <ContractDetailsDialog
+            contract={viewingContract}
+            onClose={() => setViewingContract(null)}
+            onEdit={() => {
+              setEditingContract(viewingContract);
+              setViewingContract(null);
+              setShowForm(true);
+            }}
+          />
+        )}
+
+        {deletingContract && (
+          <DeleteConfirmDialog
+            contractName={`${deletingContract.company} — ${deletingContract.name}`}
+            onCancel={() => setDeletingContract(null)}
+            onConfirm={() => {
+              deletePermanently(deletingContract.id);
+              setDeletingContract(null);
             }}
           />
         )}

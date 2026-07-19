@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
+import { Contract, STORAGE_KEY } from "@/lib/contracts"
 import {
   Sidebar,
   SidebarContent,
@@ -15,9 +16,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuBadge,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 import {
   DropdownMenu,
@@ -77,15 +75,9 @@ type NavItem = {
 // Hardcoded default workspace — UI-only state for now
 const initialWorkspaces: Workspace[] = [{ id: "ws_acme", name: "Acme Inc" }]
 
-const renewalsNav: NavItem = { title: "Renewals", url: "/renewals", icon: CalendarClock, badge: "3" }
+const renewalsNav: NavItem = { title: "Renewals", url: "/dashboard/renewals", icon: CalendarClock, badge: "3" }
 const analyticsNav: NavItem = { title: "Spend Analytics", url: "/analytics", icon: BarChart3 }
 const alertsNav: NavItem = { title: "Alerts", url: "/alerts", icon: Bell, badge: "5" }
-
-const contractsSubNav = [
-  { title: "All Contracts", url: "/dashboard/contracts" },
-  { title: "By Category", url: "/dashboard/contracts?view=category" },
-  { title: "Archived", url: "/dashboard/contracts?view=archived" },
-]
 
 const orgNav = [
   { title: "Members", url: "/org/members", icon: Users },
@@ -106,6 +98,33 @@ export function AppSidebar() {
   )
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [newWorkspaceName, setNewWorkspaceName] = useState("")
+  const [activeContractCount, setActiveContractCount] = useState<number | null>(null)
+
+  // Best-effort: reads on mount, then re-reads whenever this tab regains
+  // focus (covers "added a contract, tabbed away and back"). There's no
+  // shared store yet (each page independently owns its own localStorage
+  // read), so an add/delete happening in the same tab right now won't be
+  // reflected here until the next focus/mount — a real gap, not a
+  // rounding error. Worth a shared ContractsContext if this needs to be
+  // truly live.
+  useEffect(() => {
+    function readCount() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        const contracts: Contract[] = saved ? JSON.parse(saved) : [];
+        setActiveContractCount(contracts.filter((c) => c.status !== "cancelled").length);
+      } catch {
+        setActiveContractCount(0);
+      }
+    }
+    readCount();
+    window.addEventListener("focus", readCount);
+    window.addEventListener("storage", readCount);
+    return () => {
+      window.removeEventListener("focus", readCount);
+      window.removeEventListener("storage", readCount);
+    };
+  }, [])
 
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId)
 
@@ -174,28 +193,16 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              {/* Contracts — nested sub-menu */}
-              <Collapsible defaultOpen className="group/collapsible">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger render={<SidebarMenuButton />}>
-                    <FileText />
-                    <span>Contracts</span>
-                    <SidebarMenuBadge className="static ml-auto mr-1">24</SidebarMenuBadge>
-                    <ChevronDown className="transition-transform group-data-[state=open]/collapsible:rotate-180" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {contractsSubNav.map((sub) => (
-                        <SidebarMenuSubItem key={sub.title}>
-                          <SidebarMenuSubButton render={<Link href={sub.url} />}>
-                            <span>{sub.title}</span>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
+              {/* Contracts */}
+              <SidebarMenuItem>
+                <SidebarMenuButton render={<Link href="/dashboard/contracts" />}>
+                  <FileText />
+                  <span>Contracts</span>
+                </SidebarMenuButton>
+                {activeContractCount !== null && activeContractCount > 0 && (
+                  <SidebarMenuBadge>{activeContractCount}</SidebarMenuBadge>
+                )}
+              </SidebarMenuItem>
 
               {/* Remaining flat items */}
               {[renewalsNav, analyticsNav, alertsNav].map((item) => (

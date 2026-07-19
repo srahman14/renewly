@@ -1,9 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ListFilter } from "lucide-react";
 import ContractForm from "@/components/ContractForm";
-import { Contract, Status, STORAGE_KEY, currency } from "@/lib/contracts";
-import { DeadlinePill, StatusDot, CategoryBadge, ActionsMenu } from "@/components/ContractUI";
+import ContractDetailsDialog from "@/components/ContractDetailsDialog";
+import {
+  Contract,
+  Status,
+  STORAGE_KEY,
+  currency,
+  formatDate,
+  getNextRenewalDate,
+  daysUntilDeadline,
+  deadlineLabel,
+  daysUntilRenewalLabel,
+  isFlagged,
+} from "@/lib/contracts";
+import { DeadlinePill, RenewalWarningBadge, StatusDot, CategoryBadge, ActionsMenu, DeleteConfirmDialog } from "@/components/ContractUI";
 import {
   Select,
   SelectContent,
@@ -12,8 +25,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const STATUS_TABS: { key: "all" | Status; label: string }[] = [
-  { key: "all", label: "All" },
+type StatusTabKey = "active" | "flagged" | "cancelled";
+
+const STATUS_TABS: { key: StatusTabKey; label: string }[] = [
+  { key: "active", label: "Active" },
   { key: "flagged", label: "Flagged" },
   { key: "cancelled", label: "Cancelled" },
 ];
@@ -27,32 +42,31 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "recent", label: "Most recent" },
 ];
 
-// See the matching comment in dashboard/page.tsx — reading here, during
-// state initialization, avoids the load-effect/save-effect race that was
-// wiping contracts on mount (a save effect firing with stale empty state
-// a moment before the load effect's data lands).
-function loadContracts(): Contract[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
-  } catch {
-    return [];
-  }
-}
-
 export default function AllContractsPage() {
-  const [contracts, setContracts] = useState<Contract[]>(loadContracts);
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [hasHydrated, setHasHydrated] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
-  const [statusTab, setStatusTab] = useState<(typeof STATUS_TABS)[number]["key"]>("all");
+  const [viewingContract, setViewingContract] = useState<Contract | null>(null);
+  const [deletingContract, setDeletingContract] = useState<Contract | null>(null);
+  const [statusTab, setStatusTab] = useState<StatusTabKey>("active");
   const [category, setCategory] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("deadline");
 
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) setContracts(JSON.parse(saved));
+    } finally {
+      setHasHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(contracts));
-  }, [contracts]);
+  }, [contracts, hasHydrated]);
 
   function saveContract(contract: Contract) {
     setContracts((previous) => {
@@ -66,14 +80,12 @@ export default function AllContractsPage() {
     setEditingContract(null);
   }
 
-  // Soft: marks a contract cancelled but keeps it in your data
   function cancelContract(id: string) {
     setContracts((previous) =>
       previous.map((item) => (item.id === id ? { ...item, status: "cancelled" as Status } : item))
     );
   }
 
-  // Hard: permanently removes the contract
   function deletePermanently(id: string) {
     setContracts((previous) => previous.filter((item) => item.id !== id));
   }
@@ -93,7 +105,13 @@ export default function AllContractsPage() {
 
   const filtered = useMemo(() => {
     const result = contracts.filter((contract) => {
-      const matchesStatus = statusTab === "all" || contract.status === statusTab;
+      const matchesStatus =
+        statusTab === "cancelled"
+          ? contract.status === "cancelled"
+          : statusTab === "flagged"
+          ? contract.status !== "cancelled" && isFlagged(contract)
+          : contract.status !== "cancelled";
+
       const matchesCategory = category === "all" || contract.category === category;
       const matchesSearch =
         query.length === 0 ||
@@ -112,7 +130,7 @@ export default function AllContractsPage() {
           return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
         case "deadline":
         default:
-          return a.daysLeft - b.daysLeft;
+          return daysUntilDeadline(a) - daysUntilDeadline(b);
       }
     });
 
@@ -137,7 +155,9 @@ export default function AllContractsPage() {
               All contracts
             </h1>
             <p className="mt-2 max-w-lg font-body text-[15px] leading-relaxed text-ink/60">
-              {hasAnyContracts
+              {!hasHydrated
+                ? "\u00A0"
+                : hasAnyContracts
                 ? `${filtered.length} of ${contracts.length} contract${contracts.length === 1 ? "" : "s"} shown · ${currency(totalMonthlySpend)}/mo`
                 : "Every subscription you're tracking, in one place."}
             </p>
@@ -151,6 +171,12 @@ export default function AllContractsPage() {
           </button>
         </div>
 
+        {!hasHydrated ? (
+          <div className="mt-14 rounded-md border border-line bg-white px-6 py-16 text-center">
+            <p className="font-mono text-sm text-ink/40">Loading contracts…</p>
+          </div>
+        ) : (
+          <>
         {hasAnyContracts && (
           <>
             {/* Filter bar */}
@@ -171,18 +197,16 @@ export default function AllContractsPage() {
                 </div>
 
                 <div className="flex gap-3">
-                  {/*
-                    shadcn's default SelectTrigger border (border-input) is nearly
-                    invisible against bg-paper-muted/white until it's focused or
-                    open. Force the same border-line + bg-white + hover/focus
-                    treatment every other control on this page already uses, so
-                    it reads as clickable at rest, not just once it's active.
-                  */}
                   <Select value={sort} onValueChange={(value) => setSort(value as SortKey)}>
                     <SelectTrigger
-                      className="w-[190px] border border-line bg-white text-ink shadow-none transition-colors hover:border-ink focus:border-ink focus:ring-0 data-[state=open]:border-ink"
+                      className="w-[210px] border border-line bg-white text-ink shadow-none transition-colors hover:border-ink focus:border-ink focus:ring-0 data-[state=open]:border-ink"
                     >
-                      <SelectValue placeholder="Sort" />
+                      <span className="flex items-center gap-2">
+                        <ListFilter className="h-3.5 w-3.5 text-ink/40" />
+                        <SelectValue placeholder="Sort">
+                          {SORT_OPTIONS.find((opt) => opt.key === sort)?.label}
+                        </SelectValue>
+                      </span>
                     </SelectTrigger>
                     <SelectContent>
                       {SORT_OPTIONS.map((opt) => (
@@ -235,39 +259,77 @@ export default function AllContractsPage() {
             {/* Contract list */}
             {hasFilteredResults ? (
               <div className="mt-6 overflow-hidden rounded-md border border-line bg-white">
+                <div className="hidden grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_auto] gap-4 border-b border-line bg-paper-muted px-6 py-3 font-mono text-[11px] uppercase tracking-[0.08em] text-ink/40 md:grid">
+                  <span>Contract</span>
+                  <span>Owner</span>
+                  <span>Cost</span>
+                  <span>Renews</span>
+                  <span>Category</span>
+                  <span>Cancel by</span>
+                  <span className="sr-only">Actions</span>
+                </div>
+
                 <div className="divide-y divide-line">
-                  {filtered.map((contract) => (
-                    <div
-                      key={contract.id}
-                      className="grid gap-4 px-6 py-5 md:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] md:items-center"
-                    >
-                      <div className="flex items-center gap-3">
-                        <StatusDot status={contract.status} />
-                        <div>
-                          <p className="font-body font-medium text-ink">{contract.company}</p>
-                          <p className="text-sm text-ink/50">{contract.name}</p>
+                  {filtered.map((contract) => {
+                    const cancelled = contract.status === "cancelled";
+                    return (
+                      <div
+                        key={contract.id}
+                        className={`grid gap-4 px-6 py-5 md:grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_auto] md:items-center ${
+                          cancelled ? "opacity-50" : ""
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <StatusDot contract={contract} />
+                          <div>
+                            <p className={`font-body font-medium text-ink ${cancelled ? "line-through" : ""}`}>
+                              {contract.company}
+                            </p>
+                            <p className="text-sm text-ink/50">{contract.name}</p>
+                          </div>
                         </div>
+
+                        <div>
+                          <p className="font-body text-sm text-ink/70">{contract.owner}</p>
+                          {contract.team && (
+                            <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-ink/35">
+                              {contract.team}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <p className="font-mono text-sm text-ink/60">{currency(contract.monthlySpend)}/mo</p>
+                          <p className="font-mono text-[10px] text-ink/35">{contract.cycle}</p>
+                        </div>
+
+                        <p className="font-mono text-sm text-ink/60">{formatDate(getNextRenewalDate(contract))}</p>
+
+                        <CategoryBadge category={contract.category} />
+
+                        <div className="flex flex-col gap-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <DeadlinePill contract={contract} />
+                            <RenewalWarningBadge contract={contract} />
+                          </div>
+                          <span className="font-mono text-[10px] text-ink/35">
+                            {daysUntilRenewalLabel(contract)} · {contract.noticeDays}d notice
+                          </span>
+                        </div>
+
+                        <ActionsMenu
+                          isCancelled={cancelled}
+                          onViewDetails={() => setViewingContract(contract)}
+                          onEdit={() => {
+                            setEditingContract(contract);
+                            setShowForm(true);
+                          }}
+                          onCancel={() => cancelContract(contract.id)}
+                          onDeletePermanently={() => setDeletingContract(contract)}
+                        />
                       </div>
-
-                      <p className="font-mono text-sm text-ink/60">£{contract.monthlySpend}/mo</p>
-
-                      <p className="font-mono text-sm text-ink/60">{contract.renewsOn}</p>
-
-                      <CategoryBadge category={contract.category} />
-
-                      <DeadlinePill daysLeft={contract.daysLeft} />
-
-                      <ActionsMenu
-                        isCancelled={contract.status === "cancelled"}
-                        onEdit={() => {
-                          setEditingContract(contract);
-                          setShowForm(true);
-                        }}
-                        onCancel={() => cancelContract(contract.id)}
-                        onDeletePermanently={() => deletePermanently(contract.id)}
-                      />
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ) : (
@@ -278,7 +340,7 @@ export default function AllContractsPage() {
                 </p>
                 <button
                   onClick={() => {
-                    setStatusTab("all");
+                    setStatusTab("active");
                     setCategory("all");
                     setQuery("");
                   }}
@@ -305,6 +367,8 @@ export default function AllContractsPage() {
             </button>
           </div>
         )}
+          </>
+        )}
 
         {showForm && (
           <ContractForm
@@ -313,6 +377,29 @@ export default function AllContractsPage() {
             onClose={() => {
               setShowForm(false);
               setEditingContract(null);
+            }}
+          />
+        )}
+
+        {viewingContract && (
+          <ContractDetailsDialog
+            contract={viewingContract}
+            onClose={() => setViewingContract(null)}
+            onEdit={() => {
+              setEditingContract(viewingContract);
+              setViewingContract(null);
+              setShowForm(true);
+            }}
+          />
+        )}
+
+        {deletingContract && (
+          <DeleteConfirmDialog
+            contractName={`${deletingContract.company} — ${deletingContract.name}`}
+            onCancel={() => setDeletingContract(null)}
+            onConfirm={() => {
+              deletePermanently(deletingContract.id);
+              setDeletingContract(null);
             }}
           />
         )}
