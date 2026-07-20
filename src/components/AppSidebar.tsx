@@ -59,7 +59,8 @@ import {
   BookOpen,
   MessageCircle,
 } from "lucide-react"
-import { useAuthStore } from "@/lib/store/auth-store"
+import { useAuthStore } from "@/lib/stores/auth.store"
+import { useUserProfileQuery } from "@/lib/queries/user.queries"
 
 type Workspace = {
   id: string
@@ -101,8 +102,18 @@ export function AppSidebar() {
   const [newWorkspaceName, setNewWorkspaceName] = useState("")
   const [activeContractCount, setActiveContractCount] = useState<number | null>(null)
   
+  // User related 
+  const userId = useAuthStore((state) => state.user?.id)
   const signOut = useAuthStore((state) => state.signOut)
   
+  const { 
+    data: profile,
+    isLoading,
+    isError,
+    error,
+  } = useUserProfileQuery(userId)
+
+
   // Best-effort: reads on mount, then re-reads whenever this tab regains
   // focus (covers "added a contract, tabbed away and back"). There's no
   // shared store yet (each page independently owns its own localStorage
@@ -283,7 +294,7 @@ export function AppSidebar() {
             <DropdownMenu>
               <DropdownMenuTrigger render={<SidebarMenuButton />}>
                 <User2 />
-                Username
+                {profile?.full_name}
                 <ChevronDown className="ml-auto" />
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-[--radix-popper-anchor-width]">

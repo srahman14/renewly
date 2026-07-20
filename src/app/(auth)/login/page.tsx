@@ -9,7 +9,7 @@ import { AuthBrandPanel } from '@/components/renewly/auth-brand-panel'
 import { Logo } from '@/components/renewly/logo'
 import { PasswordField, TextField } from '@/components/renewly/form-field'
 import { Button } from '@/components/ui/button'
-import { useAuthStore } from '@/lib/store/auth-store'
+import { useAuthStore } from '@/lib/stores/auth.store'
 
 export default function LoginPage() {
   const router = useRouter()
