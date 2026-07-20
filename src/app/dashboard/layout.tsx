@@ -5,6 +5,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
   title: "renewly | dashboard",
@@ -47,6 +48,7 @@ export default async function DashboardLayout({
         <AppSidebar />
         <main className="flex w-full min-w-0 flex-1 flex-col">{children}</main>
       </SidebarProvider>
+      <Toaster position="top-right"/>
     </ThemeProvider>
   );
 }

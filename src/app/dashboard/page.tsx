@@ -342,7 +342,9 @@ export default function DashboardPage() {
           />
         )}
 
-        {muteToast && <MuteToast message={muteToast} onDismiss={() => setMuteToast(null)} />}
+        
+        {muteToast && 
+        <MuteToast message={muteToast} onDismiss={() => setMuteToast(null)} />}
       </main>
     </div>
   );

@@ -18,6 +18,7 @@ import {
   SOON_BUFFER_DAYS,
   isMuted,
 } from "@/lib/contracts";
+import { ToggleNotificationToast } from "./CustomToasts";
 
 // Continuous green → amber → red urgency scale, computed per exact day
 // count rather than a handful of fixed buckets — so two different day
@@ -168,26 +169,23 @@ export function MuteIndicator({
 export function MuteToast({
   message,
   onDismiss,
+  muted = true,
 }: {
   message: string;
   onDismiss: () => void;
+  muted?: boolean;
 }) {
   useEffect(() => {
-    const timer = setTimeout(onDismiss, 2500);
-    return () => clearTimeout(timer);
-  }, [message, onDismiss]);
+    ToggleNotificationToast(muted, message);
 
-  return (
-    <div
-      className="fixed bottom-6 right-6 z-[120] flex items-center gap-2 rounded-[4px] bg-navy px-4 py-3 shadow-lg"
-      role="status"
-      aria-live="polite"
-    >
-      <Bell className="h-3.5 w-3.5 text-amber-light" />
-      <p className="font-body text-sm text-paper">{message}</p>
-    </div>
-  );
+    const timer = setTimeout(onDismiss, 2500);
+
+    return () => clearTimeout(timer);
+  }, [message, muted, onDismiss]);
+
+  return null;
 }
+
 
 export function CategoryBadge({ category }: { category: string }) {
   const Icon = getCategoryIcon(category);
