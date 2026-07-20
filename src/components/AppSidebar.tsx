@@ -59,6 +59,7 @@ import {
   BookOpen,
   MessageCircle,
 } from "lucide-react"
+import { useAuthStore } from "@/lib/store/auth-store"
 
 type Workspace = {
   id: string
@@ -99,7 +100,9 @@ export function AppSidebar() {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [newWorkspaceName, setNewWorkspaceName] = useState("")
   const [activeContractCount, setActiveContractCount] = useState<number | null>(null)
-
+  
+  const signOut = useAuthStore((state) => state.signOut)
+  
   // Best-effort: reads on mount, then re-reads whenever this tab regains
   // focus (covers "added a contract, tabbed away and back"). There's no
   // shared store yet (each page independently owns its own localStorage
@@ -288,7 +291,7 @@ export function AppSidebar() {
                   <Settings className="mr-2 size-4" />
                   <span>Account Settings</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => signOut()}>
                   <span>Sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>

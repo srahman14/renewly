@@ -30,7 +30,7 @@ export default function Footer() {
             deadline calculated on the spot.
           </p>
           <a
-            href="#hero-cta"
+            href="/register"
             className="mt-7 inline-block rounded-[4px] bg-amber px-6 py-3 font-body text-[15px] font-medium text-ink transition-colors hover:bg-amber-light"
           >
             Get started free
