@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Mail } from 'lucide-react'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
@@ -8,15 +9,33 @@ import { AuthBrandPanel } from '@/components/renewly/auth-brand-panel'
 import { Logo } from '@/components/renewly/logo'
 import { PasswordField, TextField } from '@/components/renewly/form-field'
 import { Button } from '@/components/ui/button'
+import { useAuthStore } from '@/lib/store/auth-store'
 
 export default function LoginPage() {
-  const [submitting, setSubmitting] = useState(false)
+  const router = useRouter()
+  const signIn = useAuthStore((state) => state.signIn)
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const [submitting, setSubmitting] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    setFormError(null)
+
+    const formData = new FormData(event.currentTarget)
+    const email = String(formData.get('email') ?? '').trim()
+    const password = String(formData.get('password') ?? '')
+
     setSubmitting(true)
-    // Wire this up to your auth backend.
-    setTimeout(() => setSubmitting(false), 1200)
+    const result = await signIn(email, password)
+    setSubmitting(false)
+
+    if (!result.success) {
+      setFormError(result.error ?? 'Invalid email or password.')
+      return
+    }
+
+    router.push('/dashboard')
   }
 
   return (
@@ -35,12 +54,12 @@ export default function LoginPage() {
               Sign in to Renewly
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-ink/60 dark:text-paper/60">
-              Pick up where your team left off tracking renewals and spend.
+              Pick up where you left off — check what's renewing soon.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
               <TextField
-                label="Work email"
+                label="Email"
                 type="email"
                 name="email"
                 autoComplete="email"
@@ -49,32 +68,28 @@ export default function LoginPage() {
                 icon={<Mail className="size-4" />}
               />
 
-              <div className="space-y-1.5">
-                <PasswordField
-                  label="Password"
-                  name="password"
-                  autoComplete="current-password"
-                  placeholder="Enter your password"
-                  required
-                />
-                <div className="flex justify-end">
-                  <Link
-                    href="/forgot-password"
-                    className="text-xs font-medium text-teal underline-offset-4 hover:underline dark:text-teal-light"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
+              <PasswordField
+                label="Password"
+                name="password"
+                autoComplete="current-password"
+                placeholder="Your password"
+                required
+              />
+
+              <div className="flex justify-end">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm font-medium text-teal underline-offset-4 hover:underline dark:text-teal-light"
+                >
+                  Forgot password?
+                </Link>
               </div>
 
-              <label className="flex items-center gap-2.5 text-sm text-ink/70 dark:text-paper/70">
-                <input
-                  type="checkbox"
-                  name="remember"
-                  className="size-4 rounded border-line text-teal accent-teal focus-visible:ring-2 focus-visible:ring-teal/40 dark:border-line-dark dark:accent-teal-light"
-                />
-                Keep me signed in for 30 days
-              </label>
+              {formError && (
+                <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+                  {formError}
+                </p>
+              )}
 
               <Button
                 type="submit"
@@ -86,12 +101,12 @@ export default function LoginPage() {
             </form>
 
             <p className="mt-8 text-center text-sm text-ink/60 dark:text-paper/60">
-              New to Renewly?{' '}
+              Don&apos;t have an account?{' '}
               <Link
                 href="/register"
                 className="font-medium text-teal underline-offset-4 hover:underline dark:text-teal-light"
               >
-                Create an account
+                Sign up
               </Link>
             </p>
           </div>
