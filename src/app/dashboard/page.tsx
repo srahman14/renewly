@@ -18,8 +18,9 @@ import {
   deadlineLabel,
   daysUntilRenewalLabel,
   isFlagged,
+  isMuted,
 } from "@/lib/contracts";
-import { DeadlinePill, RenewalWarningBadge, StatusDot, CategoryBadge, ActionsMenu, DeleteConfirmDialog } from "@/components/ContractUI";
+import { DeadlinePill, RenewalWarningBadge, StatusDot, MuteIndicator, MuteToast, CategoryBadge, ActionsMenu, DeleteConfirmDialog } from "@/components/ContractUI";
 
 // How many rows show on the overview before sending people to /dashboard/contracts.
 // Full search/filter/sort now lives only on that page — this is a glance, not a workspace.
@@ -32,6 +33,7 @@ export default function DashboardPage() {
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [viewingContract, setViewingContract] = useState<Contract | null>(null);
   const [deletingContract, setDeletingContract] = useState<Contract | null>(null);
+  const [muteToast, setMuteToast] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -67,6 +69,18 @@ export default function DashboardPage() {
 
   function deletePermanently(id: string) {
     setContracts((previous) => previous.filter((item) => item.id !== id));
+  }
+
+  function toggleMute(contract: Contract) {
+    const nowMuted = !isMuted(contract);
+    setContracts((previous) =>
+      previous.map((item) => (item.id === contract.id ? { ...item, muted: nowMuted } : item))
+    );
+    setMuteToast(
+      nowMuted
+        ? `Notifications muted for ${contract.company}`
+        : `Notifications unmuted for ${contract.company}`
+    );
   }
 
   const totals = useMemo(() => {
@@ -244,7 +258,10 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-3">
                         <StatusDot contract={contract} />
                         <div>
-                          <p className="font-body font-medium text-ink">{contract.company}</p>
+                          <p className="flex items-center gap-1.5 font-body font-medium text-ink">
+                            {contract.company}
+                            <MuteIndicator contract={contract} onToggle={() => toggleMute(contract)} />
+                          </p>
                           <p className="text-sm text-ink/50">{contract.name}</p>
                         </div>
                       </div>
@@ -324,6 +341,8 @@ export default function DashboardPage() {
             }}
           />
         )}
+
+        {muteToast && <MuteToast message={muteToast} onDismiss={() => setMuteToast(null)} />}
       </main>
     </div>
   );

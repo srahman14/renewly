@@ -43,6 +43,13 @@ export interface Contract {
   status: Status;
   category: string;
   createdAt?: string; // ISO date string — set this when a contract is created, used for "Most recent" sort
+  // Per-contract notification silencing — "I know, stop reminding me."
+  // Independent of status: a muted contract is still active/flagged, it
+  // just won't trigger alerts. Optional so existing stored contracts
+  // (saved before this field existed) parse as unmuted rather than
+  // undefined/broken — always read through isMuted() below, never this
+  // field directly.
+  muted?: boolean;
 }
 
 export const STATUS_LABEL: Record<Status, string> = {
@@ -281,6 +288,13 @@ export function urgencyFromContract(contract: Contract): "critical" | "soon" | "
   if (isFlagged(contract)) return "critical";
   if (isSoon(contract)) return "soon";
   return "clear";
+}
+
+// Whether this contract's alerts (deadline day, 1-day-before, day-of) are
+// silenced. Defaults to false for any contract saved before this field
+// existed, rather than treating undefined as an error state.
+export function isMuted(contract: Contract): boolean {
+  return contract.muted === true;
 }
 
 // --- Legacy — superseded by the functions above, kept only in case

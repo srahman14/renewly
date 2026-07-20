@@ -77,8 +77,8 @@ type NavItem = {
 const initialWorkspaces: Workspace[] = [{ id: "ws_acme", name: "Acme Inc" }]
 
 const renewalsNav: NavItem = { title: "Renewals", url: "/dashboard/renewals", icon: CalendarClock, badge: "3" }
-const analyticsNav: NavItem = { title: "Spend Analytics", url: "/analytics", icon: BarChart3 }
-const alertsNav: NavItem = { title: "Alerts", url: "/alerts", icon: Bell, badge: "5" }
+const analyticsNav: NavItem = { title: "Spend Analytics", url: "/dashboard/spend-analytics", icon: BarChart3 }
+const alertsNav: NavItem = { title: "Alerts", url: "/dashboard/alerts", icon: Bell, badge: "5" }
 
 const orgNav = [
   { title: "Members", url: "/org/members", icon: Users },
