@@ -1,4 +1,5 @@
-import { Bell, MoreHorizontal } from "lucide-react";
+import { useEffect } from "react";
+import { Bell, BellOff, MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +16,7 @@ import {
   getCategoryIcon,
   getCategoryDotClass,
   SOON_BUFFER_DAYS,
+  isMuted,
 } from "@/lib/contracts";
 
 // Continuous green → amber → red urgency scale, computed per exact day
@@ -121,6 +123,70 @@ export function StatusDot({ contract }: { contract: Contract }) {
       : "bg-teal";
 
   return <span className={`inline-block h-1.5 w-1.5 rounded-full ${color}`} />;
+}
+
+// Always-visible mute toggle — sits next to the contract name so muted
+// state is scannable in the list, and clicking it directly toggles the
+// state without going through the row menu (a menu item for this stopped
+// making sense once the icon itself became the obvious click target).
+// Deliberately doesn't touch the row's opacity/layout otherwise; muted
+// just means "don't notify me," not "this row matters less."
+export function MuteIndicator({
+  contract,
+  onToggle,
+}: {
+  contract: Contract;
+  onToggle: () => void;
+}) {
+  const muted = isMuted(contract);
+
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggle();
+      }}
+      className="rounded-[3px] p-0.5 transition-colors hover:bg-ink/5"
+      aria-label={muted ? "Unmute notifications" : "Mute notifications"}
+      title={muted ? "Unmute notifications" : "Mute notifications"}
+    >
+      {muted ? (
+        <BellOff className="h-3.5 w-3.5 text-ink/35" />
+      ) : (
+        <Bell className="h-3.5 w-3.5 text-ink/20" />
+      )}
+    </button>
+  );
+}
+
+// Lightweight, auto-dismissing confirmation shown after mute/unmute — not
+// a blocking dialog, since muting is low-stakes and instantly reversible
+// (unlike DeleteConfirmDialog, which guards a permanent action). Sits in
+// the bottom corner so it doesn't interrupt whatever the person was doing
+// on the page. Shared here so Dashboard and Renewals show the same toast.
+export function MuteToast({
+  message,
+  onDismiss,
+}: {
+  message: string;
+  onDismiss: () => void;
+}) {
+  useEffect(() => {
+    const timer = setTimeout(onDismiss, 2500);
+    return () => clearTimeout(timer);
+  }, [message, onDismiss]);
+
+  return (
+    <div
+      className="fixed bottom-6 right-6 z-[120] flex items-center gap-2 rounded-[4px] bg-navy px-4 py-3 shadow-lg"
+      role="status"
+      aria-live="polite"
+    >
+      <Bell className="h-3.5 w-3.5 text-amber-light" />
+      <p className="font-body text-sm text-paper">{message}</p>
+    </div>
+  );
 }
 
 export function CategoryBadge({ category }: { category: string }) {
