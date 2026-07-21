@@ -15,8 +15,9 @@ import {
   deadlineLabel,
   daysUntilRenewalLabel,
   isFlagged,
+  isMuted,
 } from "@/lib/contracts";
-import { DeadlinePill, RenewalWarningBadge, StatusDot, CategoryBadge, ActionsMenu, DeleteConfirmDialog } from "@/components/ContractUI";
+import { DeadlinePill, RenewalWarningBadge, StatusDot, MuteIndicator, MuteToast, CategoryBadge, ActionsMenu, DeleteConfirmDialog } from "@/components/ContractUI";
 import {
   Select,
   SelectContent,
@@ -49,6 +50,7 @@ export default function AllContractsPage() {
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [viewingContract, setViewingContract] = useState<Contract | null>(null);
   const [deletingContract, setDeletingContract] = useState<Contract | null>(null);
+  const [muteToast, setMuteToast] = useState<string | null>(null);
   const [statusTab, setStatusTab] = useState<StatusTabKey>("active");
   const [category, setCategory] = useState<string>("all");
   const [query, setQuery] = useState("");
@@ -88,6 +90,18 @@ export default function AllContractsPage() {
 
   function deletePermanently(id: string) {
     setContracts((previous) => previous.filter((item) => item.id !== id));
+  }
+
+  function toggleMute(contract: Contract) {
+    const nowMuted = !isMuted(contract);
+    setContracts((previous) =>
+      previous.map((item) => (item.id === contract.id ? { ...item, muted: nowMuted } : item))
+    );
+    setMuteToast(
+      nowMuted
+        ? `Notifications muted for ${contract.company}`
+        : `Notifications unmuted for ${contract.company}`
+    );
   }
 
   const categories = useMemo(() => {
@@ -196,15 +210,13 @@ export default function AllContractsPage() {
                   ))}
                 </div>
 
-                <div className="flex gap-3">
-                  <Select value={sort} onValueChange={(value) => setSort(value as SortKey)}>
-                    <SelectTrigger
-                      className="w-[210px] border border-line bg-white text-ink shadow-none transition-colors hover:border-ink focus:border-ink focus:ring-0 data-[state=open]:border-ink"
-                    >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+                    <SelectTrigger className="w-full sm:w-52">
                       <span className="flex items-center gap-2">
                         <ListFilter className="h-3.5 w-3.5 text-ink/40" />
-                        <SelectValue placeholder="Sort">
-                          {SORT_OPTIONS.find((opt) => opt.key === sort)?.label}
+                        <SelectValue>
+                          {SORT_OPTIONS.find((o) => o.key === sort)?.label}
                         </SelectValue>
                       </span>
                     </SelectTrigger>
@@ -282,8 +294,9 @@ export default function AllContractsPage() {
                         <div className="flex items-center gap-3">
                           <StatusDot contract={contract} />
                           <div>
-                            <p className={`font-body font-medium text-ink ${cancelled ? "line-through" : ""}`}>
+                            <p className={`flex items-center gap-1.5 font-body font-medium text-ink ${cancelled ? "line-through" : ""}`}>
                               {contract.company}
+                              <MuteIndicator contract={contract} onToggle={() => toggleMute(contract)} />
                             </p>
                             <p className="text-sm text-ink/50">{contract.name}</p>
                           </div>
@@ -403,6 +416,8 @@ export default function AllContractsPage() {
             }}
           />
         )}
+
+        {muteToast && <MuteToast message={muteToast} onDismiss={() => setMuteToast(null)} />}
       </main>
     </div>
   );
