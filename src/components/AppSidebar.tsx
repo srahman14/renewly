@@ -103,20 +103,15 @@ export function AppSidebar() {
   const [activeContractCount, setActiveContractCount] = useState<number | null>(null)
   
   // User related 
-  const userId = useAuthStore((state) => state.user?.id)
+  const userId = useAuthStore((state) => state.user?.id ?? null)
   const signOut = useAuthStore((state) => state.signOut)
-  
-  if (!userId) {
-    return
-  }
-
   const { 
     data: profile,
     isLoading,
     isError,
     error,
   } = useUserProfileQuery(userId)
-
+  
 
   // Best-effort: reads on mount, then re-reads whenever this tab regains
   // focus (covers "added a contract, tabbed away and back"). There's no
