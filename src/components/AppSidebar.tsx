@@ -106,6 +106,10 @@ export function AppSidebar() {
   const userId = useAuthStore((state) => state.user?.id)
   const signOut = useAuthStore((state) => state.signOut)
   
+  if (!userId) {
+    return
+  }
+
   const { 
     data: profile,
     isLoading,
