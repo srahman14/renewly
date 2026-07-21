@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { useAuthStore } from '@/lib/store/auth-store'
+import { useAuthStore } from '@/lib/stores/auth.store'
 
 // Mount once in RootLayout. Keeps the Zustand store in sync with Supabase's
 // auth events and reacts immediately to sign-out, rather than waiting for

@@ -9,7 +9,7 @@ import { AuthBrandPanel } from '@/components/renewly/auth-brand-panel'
 import { Logo } from '@/components/renewly/logo'
 import { PasswordField, TextField } from '@/components/renewly/form-field'
 import { Button } from '@/components/ui/button'
-import { useAuthStore, type AccountType } from '@/lib/store/auth-store'
+import { useAuthStore, type AccountType } from '@/lib/stores/auth.store'
 
 const COPY: Record<AccountType, { eyebrow: string; heading: string; subtext: string; cta: string }> = {
   individual: {
