@@ -98,25 +98,14 @@ export function AppSidebar() {
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(
     initialWorkspaces[0]?.id ?? null
   )
+  const [activeContractCount, setActiveContractCount] = useState<number | null>(null)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [newWorkspaceName, setNewWorkspaceName] = useState("")
-  const [activeContractCount, setActiveContractCount] = useState<number | null>(null)
-  
-  // User related 
+
   const userId = useAuthStore((state) => state.user?.id)
   const signOut = useAuthStore((state) => state.signOut)
-  
-  if (!userId) {
-    return
-  }
 
-  const { 
-    data: profile,
-    isLoading,
-    isError,
-    error,
-  } = useUserProfileQuery(userId)
-
+  const { data: profile } = useUserProfileQuery(userId ?? null)
 
   // Best-effort: reads on mount, then re-reads whenever this tab regains
   // focus (covers "added a contract, tabbed away and back"). There's no
@@ -128,21 +117,26 @@ export function AppSidebar() {
   useEffect(() => {
     function readCount() {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        const contracts: Contract[] = saved ? JSON.parse(saved) : [];
-        setActiveContractCount(contracts.filter((c) => c.status !== "cancelled").length);
+        const saved = localStorage.getItem(STORAGE_KEY)
+        const contracts: Contract[] = saved ? JSON.parse(saved) : []
+        setActiveContractCount(contracts.filter((c) => c.status !== "cancelled").length)
       } catch {
-        setActiveContractCount(0);
+        setActiveContractCount(0)
       }
     }
-    readCount();
-    window.addEventListener("focus", readCount);
-    window.addEventListener("storage", readCount);
+    readCount()
+    window.addEventListener("focus", readCount)
+    window.addEventListener("storage", readCount)
     return () => {
-      window.removeEventListener("focus", readCount);
-      window.removeEventListener("storage", readCount);
-    };
+      window.removeEventListener("focus", readCount)
+      window.removeEventListener("storage", readCount)
+    }
   }, [])
+
+  // All hooks above have run unconditionally — safe to bail out now.
+  if (!userId) {
+    return null
+  }
 
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId)
 
