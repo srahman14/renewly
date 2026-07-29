@@ -41,6 +41,8 @@ import {
   useContractsQuery,
   useCreateContractMutation,
   contractKeys,
+  useUpdateContractMutation,
+  useDeleteContractMutation,
 } from "@/lib/queries/contract.queries";
 
 type StatusTabKey = "active" | "flagged" | "cancelled";
@@ -69,6 +71,8 @@ export default function AllContractsPage() {
 
   const { data: contracts = [], isLoading, isError } = useContractsQuery(orgId);
   const createContractMutation = useCreateContractMutation(orgId);
+  const updateContractMutation = useUpdateContractMutation(orgId);
+  const deleteContractMutation = useDeleteContractMutation(orgId);
 
   const [showForm, setShowForm] = useState(false);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
@@ -86,12 +90,19 @@ export default function AllContractsPage() {
     const exists = contracts.some((item) => item.id === contract.id);
 
     if (exists) {
-      // TODO(tomorrow): replace with useUpdateContractMutation once the
-      // update service exists. This only patches the local query cache —
-      // a refetch will overwrite it with whatever's actually in Supabase.
-      queryClient.setQueryData<Contract[]>(contractKeys.all(orgId), (old) =>
-        (old ?? []).map((item) => (item.id === contract.id ? contract : item)),
-      );
+      updateContractMutation.mutate({
+        id: contract.id,
+        company: contract.company,
+        name: contract.name,
+        owner: contract.owner,
+        team: contract.team,
+        monthlySpend: contract.monthlySpend,
+        cycle: contract.cycle,
+        renewsOn: contract.renewsOn,
+        noticeDays: contract.noticeDays,
+        url: contract.url,
+        category: contract.category,
+      });
     } else {
       if (!orgId) return;
       createContractMutation.mutate({
@@ -114,29 +125,17 @@ export default function AllContractsPage() {
   }
 
   function cancelContract(id: string) {
-    // TODO(tomorrow): persist via useUpdateContractMutation (status patch)
-    queryClient.setQueryData<Contract[]>(contractKeys.all(orgId), (old) =>
-      (old ?? []).map((item) =>
-        item.id === id ? { ...item, status: "cancelled" as Status } : item,
-      ),
-    );
+    updateContractMutation.mutate({ id, status: "cancelled" });
   }
 
   function deletePermanently(id: string) {
-    // TODO(tomorrow): persist via useDeleteContractMutation
-    queryClient.setQueryData<Contract[]>(contractKeys.all(orgId), (old) =>
-      (old ?? []).filter((item) => item.id !== id),
-    );
+    deleteContractMutation.mutate(id);
   }
 
+  // TODO: fix the toggle mute function
   function toggleMute(contract: Contract) {
     const nowMuted = !isMuted(contract);
-    // TODO(tomorrow): persist via useUpdateContractMutation (muted patch)
-    queryClient.setQueryData<Contract[]>(contractKeys.all(orgId), (old) =>
-      (old ?? []).map((item) =>
-        item.id === contract.id ? { ...item, muted: nowMuted } : item,
-      ),
-    );
+    updateContractMutation.mutate({ id: contract.id, muted: nowMuted });
     setMuteToast(
       nowMuted
         ? `Notifications muted for ${contract.company}`

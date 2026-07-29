@@ -20,6 +20,23 @@ interface ContractRow {
   created_at: string;
 }
 
+export interface UpdateContractInput {
+  id: string;
+  orgId: string;
+  company?: string;
+  name?: string;
+  owner?: string;
+  team?: string;
+  monthlySpend?: number;
+  cycle?: Cycle;
+  renewsOn?: string;
+  noticeDays?: number;
+  url?: string;
+  category?: string;
+  status?: Status;
+  muted?: boolean;
+}
+
 function toContract(row: ContractRow): Contract {
   return {
     id: row.id,
@@ -92,4 +109,48 @@ export async function createContract(input: CreateContractInput): Promise<Contra
 
   if (error) throw error;
   return toContract(data as ContractRow);
+}
+
+export async function updateContract(input: UpdateContractInput): Promise<Contract> {
+  const supabase = createClient();
+  const { id, orgId, ...rest } = input;
+
+  // Only include fields that were actually passed, so a partial update
+  // (e.g. just { muted: true }) doesn't overwrite other columns with undefined.
+  const payload: Record<string, unknown> = {};
+  if (rest.company !== undefined) payload.company = rest.company;
+  if (rest.name !== undefined) payload.name = rest.name;
+  if (rest.owner !== undefined) payload.owner = rest.owner;
+  if (rest.team !== undefined) payload.team = rest.team;
+  if (rest.monthlySpend !== undefined) payload.monthly_spend = rest.monthlySpend;
+  if (rest.cycle !== undefined) payload.cycle = rest.cycle;
+  if (rest.renewsOn !== undefined) payload.renews_on = rest.renewsOn;
+  if (rest.noticeDays !== undefined) payload.notice_days = rest.noticeDays;
+  if (rest.url !== undefined) payload.url = rest.url;
+  if (rest.category !== undefined) payload.category = rest.category;
+  if (rest.status !== undefined) payload.status = rest.status;
+  if (rest.muted !== undefined) payload.muted = rest.muted;
+
+  const { data, error } = await supabase
+    .from("contracts")
+    .update(payload)
+    .eq("id", id)
+    .eq("org_id", orgId) // defense in depth alongside RLS — not load-bearing, but cheap
+    .select()
+    .single();
+
+  if (error) throw error;
+  return toContract(data as ContractRow);
+}
+
+export async function deleteContract(id: string, orgId: string): Promise<void> {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("contracts")
+    .delete()
+    .eq("id", id)
+    .eq("org_id", orgId);
+
+  if (error) throw error;
 }

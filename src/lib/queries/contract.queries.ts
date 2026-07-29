@@ -4,6 +4,9 @@ import {
   fetchContracts,
   createContract,
   type CreateContractInput,
+  UpdateContractInput,
+  updateContract,
+  deleteContract,
 } from "@/lib/services/contract.service";
 import type { Contract } from "@/types/index";
 
@@ -70,6 +73,70 @@ export function useCreateContractMutation(orgId: string | null) {
     },
 
     onError: (_err, _input, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(contractKeys.all(orgId), context.previous);
+      }
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: contractKeys.all(orgId) });
+    },
+  });
+}
+
+export function useUpdateContractMutation(orgId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: Omit<UpdateContractInput, "orgId">) => {
+      if (!orgId) throw new Error("Org ID is required");
+      return updateContract({ ...input, orgId });
+    },
+
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: contractKeys.all(orgId) });
+      const previous = queryClient.getQueryData<Contract[]>(contractKeys.all(orgId));
+
+      queryClient.setQueryData<Contract[]>(contractKeys.all(orgId), (old) =>
+        (old ?? []).map((c) => (c.id === input.id ? { ...c, ...input } : c))
+      );
+
+      return { previous };
+    },
+
+    onError: (_err, _input, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(contractKeys.all(orgId), context.previous);
+      }
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: contractKeys.all(orgId) });
+    },
+  });
+}
+
+export function useDeleteContractMutation(orgId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => {
+      if (!orgId) throw new Error("Org ID is required");
+      return deleteContract(id, orgId);
+    },
+
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: contractKeys.all(orgId) });
+      const previous = queryClient.getQueryData<Contract[]>(contractKeys.all(orgId));
+
+      queryClient.setQueryData<Contract[]>(contractKeys.all(orgId), (old) =>
+        (old ?? []).filter((c) => c.id !== id)
+      );
+
+      return { previous };
+    },
+
+    onError: (_err, _id, context) => {
       if (context?.previous) {
         queryClient.setQueryData(contractKeys.all(orgId), context.previous);
       }
