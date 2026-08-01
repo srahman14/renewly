@@ -21,7 +21,7 @@ export interface Contract {
   id: string;
   company: string;
   name: string;
-  owner: string;
+  ownerIds: string[];
   team: string;
   monthlySpend: number;
   cycle: Cycle;

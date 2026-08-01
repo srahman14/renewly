@@ -7,7 +7,8 @@ interface ContractRow {
   org_id: string;
   company: string;
   name: string;
-  owner: string;
+  // Migrated from using owner: string -> owner_ids: string[] 
+  owner_ids: string[];
   team: string | null;
   monthly_spend: number;
   cycle: Cycle;
@@ -25,7 +26,7 @@ export interface UpdateContractInput {
   orgId: string;
   company?: string;
   name?: string;
-  owner?: string;
+  owner_ids?: string[];
   team?: string;
   monthlySpend?: number;
   cycle?: Cycle;
@@ -42,7 +43,7 @@ function toContract(row: ContractRow): Contract {
     id: row.id,
     company: row.company,
     name: row.name,
-    owner: row.owner,
+    ownerIds: row.owner_ids ?? [],
     team: row.team ?? "",
     monthlySpend: row.monthly_spend,
     cycle: row.cycle,
@@ -76,7 +77,7 @@ export interface CreateContractInput {
   orgId: string;
   company: string;
   name: string;
-  owner: string;
+  ownerIds: string[]; // was: owner: string
   team?: string;
   monthlySpend: number;
   cycle: Cycle;
@@ -95,7 +96,7 @@ export async function createContract(input: CreateContractInput): Promise<Contra
       org_id: input.orgId,
       company: input.company,
       name: input.name,
-      owner: input.owner,
+      owner_ids: input.ownerIds, // was: owner: input.owner
       team: input.team ?? null,
       monthly_spend: input.monthlySpend,
       cycle: input.cycle,
@@ -120,7 +121,7 @@ export async function updateContract(input: UpdateContractInput): Promise<Contra
   const payload: Record<string, unknown> = {};
   if (rest.company !== undefined) payload.company = rest.company;
   if (rest.name !== undefined) payload.name = rest.name;
-  if (rest.owner !== undefined) payload.owner = rest.owner;
+  if (rest.owner_ids !== undefined) payload.owner = rest.owner_ids;
   if (rest.team !== undefined) payload.team = rest.team;
   if (rest.monthlySpend !== undefined) payload.monthly_spend = rest.monthlySpend;
   if (rest.cycle !== undefined) payload.cycle = rest.cycle;
