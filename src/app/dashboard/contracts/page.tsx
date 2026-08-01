@@ -85,43 +85,71 @@ export default function AllContractsPage() {
   const [category, setCategory] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("deadline");
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Real mutation state, not a local guess — the form's Save button and
+  // "Saving..." label read directly from this, so they can't desync from
+  // what's actually happening on the network.
+  const isSaving =
+    createContractMutation.isPending || updateContractMutation.isPending;
 
   function saveContract(contract: Contract) {
     const exists = contracts.some((item) => item.id === contract.id);
+    setSaveError(null);
 
     if (exists) {
-      updateContractMutation.mutate({
-        id: contract.id,
-        company: contract.company,
-        name: contract.name,
-        owner: contract.owner,
-        team: contract.team,
-        monthlySpend: contract.monthlySpend,
-        cycle: contract.cycle,
-        renewsOn: contract.renewsOn,
-        noticeDays: contract.noticeDays,
-        url: contract.url,
-        category: contract.category,
-      });
+      updateContractMutation.mutate(
+        {
+          id: contract.id,
+          company: contract.company,
+          name: contract.name,
+          owner: contract.owner,
+          team: contract.team,
+          monthlySpend: contract.monthlySpend,
+          cycle: contract.cycle,
+          renewsOn: contract.renewsOn,
+          noticeDays: contract.noticeDays,
+          url: contract.url,
+          category: contract.category,
+        },
+        {
+          onSuccess: () => {
+            setShowForm(false);
+            setEditingContract(null);
+          },
+          onError: () => setSaveError("Couldn't save — please try again."),
+        },
+      );
     } else {
-      if (!orgId) return;
-      createContractMutation.mutate({
-        orgId,
-        company: contract.company,
-        name: contract.name,
-        owner: contract.owner,
-        team: contract.team,
-        monthlySpend: contract.monthlySpend,
-        cycle: contract.cycle,
-        renewsOn: contract.renewsOn,
-        noticeDays: contract.noticeDays,
-        url: contract.url,
-        category: contract.category,
-      });
+      if (!orgId) {
+        setSaveError(
+          "Still loading your profile — please wait a second and try again.",
+        );
+        return;
+      }
+      createContractMutation.mutate(
+        {
+          orgId,
+          company: contract.company,
+          name: contract.name,
+          owner: contract.owner,
+          team: contract.team,
+          monthlySpend: contract.monthlySpend,
+          cycle: contract.cycle,
+          renewsOn: contract.renewsOn,
+          noticeDays: contract.noticeDays,
+          url: contract.url,
+          category: contract.category,
+        },
+        {
+          onSuccess: () => {
+            setShowForm(false);
+            setEditingContract(null);
+          },
+          onError: () => setSaveError("Couldn't save — please try again."),
+        },
+      );
     }
-
-    setShowForm(false);
-    setEditingContract(null);
   }
 
   function cancelContract(id: string) {
@@ -134,6 +162,7 @@ export default function AllContractsPage() {
 
   // TODO: fix the toggle mute function
   function toggleMute(contract: Contract) {
+     console.log("toggleMute called", contract.id, Date.now());
     const nowMuted = !isMuted(contract);
     updateContractMutation.mutate({ id: contract.id, muted: nowMuted });
     setMuteToast(
@@ -468,7 +497,10 @@ export default function AllContractsPage() {
             onClose={() => {
               setShowForm(false);
               setEditingContract(null);
+              setSaveError(null);
             }}
+            isSaving={isSaving}
+            saveError={saveError}
           />
         )}
 
