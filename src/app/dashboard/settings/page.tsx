@@ -68,7 +68,7 @@ export default function SettingsPage() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    "group flex shrink-0 items-center gap-3 rounded-[4px] border px-3 py-2.5 text-left outline-none transition-colors md:shrink",
+                    "group flex shrink-0 items-center gap-3 rounded-md border px-3 py-2.5 text-left outline-none transition-colors md:shrink",
                     isActive
                       ? "border-line bg-white shadow-[0_8px_20px_-14px_rgba(18,20,28,0.4)]"
                       : "border-transparent hover:bg-white/60 focus-visible:ring-2 focus-visible:ring-navy/40"
