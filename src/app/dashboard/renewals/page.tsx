@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, ArrowRight, CircleCheck } from "lucide-react";
 import ContractForm from "@/components/ContractForm";
 import ContractDetailsDialog from "@/components/ContractDetailsDialog";
 import {
   Contract,
-  STORAGE_KEY,
   currency,
   formatDate,
   getNextRenewalDate,
@@ -20,6 +19,13 @@ import {
   SOON_BUFFER_DAYS,
 } from "@/lib/contracts";
 import { CategoryBadge, RenewalWarningBadge } from "@/components/ContractUI";
+import { useAuthStore } from "@/lib/stores/auth.store";
+import { useUserProfileQuery } from "@/lib/queries/user.queries";
+import {
+  useContractsQuery,
+  useCreateContractMutation,
+  useUpdateContractMutation,
+} from "@/lib/queries/contract.queries";
 
 // This page is deliberately narrower in scope than /dashboard/contracts —
 // it's not a full list view, it's an action queue. Only two states show
@@ -28,36 +34,82 @@ import { CategoryBadge, RenewalWarningBadge } from "@/components/ContractUI";
 // fully "clear" belongs on the contracts page, not here — mixing it in
 // would bury the things that actually need a decision today.
 export default function RenewalsPage() {
-  const [contracts, setContracts] = useState<Contract[]>([]);
-  const [hasHydrated, setHasHydrated] = useState(false);
+  const userId = useAuthStore((state) => state.user?.id ?? null);
+  const { data: profile } = useUserProfileQuery(userId);
+  const orgId = profile?.org_id ?? null;
+
+  const { data: contracts = [], isLoading, isError } = useContractsQuery(orgId);
+  const createContractMutation = useCreateContractMutation(orgId);
+  const updateContractMutation = useUpdateContractMutation(orgId);
+
   const [showForm, setShowForm] = useState(false);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [viewingContract, setViewingContract] = useState<Contract | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) setContracts(JSON.parse(saved));
-    } finally {
-      setHasHydrated(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!hasHydrated) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(contracts));
-  }, [contracts, hasHydrated]);
+  // Real mutation state, not a local guess — the form's Save button and
+  // "Saving..." label read directly from this, so they can't desync from
+  // what's actually happening on the network.
+  const isSaving =
+    createContractMutation.isPending || updateContractMutation.isPending;
 
   function saveContract(contract: Contract) {
-    setContracts((previous) => {
-      const exists = previous.some((item) => item.id === contract.id);
-      if (exists) {
-        return previous.map((item) => (item.id === contract.id ? contract : item));
+    const exists = contracts.some((item) => item.id === contract.id);
+    setSaveError(null);
+
+    if (exists) {
+      updateContractMutation.mutate(
+        {
+          id: contract.id,
+          company: contract.company,
+          name: contract.name,
+          owner: contract.owner,
+          team: contract.team,
+          monthlySpend: contract.monthlySpend,
+          cycle: contract.cycle,
+          renewsOn: contract.renewsOn,
+          noticeDays: contract.noticeDays,
+          url: contract.url,
+          category: contract.category,
+        },
+        {
+          onSuccess: () => {
+            setShowForm(false);
+            setEditingContract(null);
+          },
+          onError: () => setSaveError("Couldn't save — please try again."),
+        },
+      );
+    } else {
+      if (!orgId) {
+        setSaveError(
+          "Still loading your profile — please wait a second and try again.",
+        );
+        return;
       }
-      return [...previous, contract];
-    });
-    setShowForm(false);
-    setEditingContract(null);
+      createContractMutation.mutate(
+        {
+          orgId,
+          company: contract.company,
+          name: contract.name,
+          owner: contract.owner,
+          team: contract.team,
+          monthlySpend: contract.monthlySpend,
+          cycle: contract.cycle,
+          renewsOn: contract.renewsOn,
+          noticeDays: contract.noticeDays,
+          url: contract.url,
+          category: contract.category,
+        },
+        {
+          onSuccess: () => {
+            setShowForm(false);
+            setEditingContract(null);
+          },
+          onError: () => setSaveError("Couldn't save — please try again."),
+        },
+      );
+    }
   }
 
   const activeContracts = useMemo(
@@ -242,13 +294,16 @@ export default function RenewalsPage() {
               Renewals
             </h1>
             <p className="mt-2 max-w-lg font-body text-[15px] leading-relaxed text-ink/60">
-              {!hasHydrated
+              {isLoading
                 ? "\u00A0"
                 : totalQueued === 0
                 ? "Nothing needs a decision right now."
                 : `${totalQueued} contract${totalQueued === 1 ? "" : "s"} need${
                     totalQueued === 1 ? "s" : ""
                   } your attention.`}
+            </p>
+            <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-ink/35">
+              Showing contracts due today or within the next {SOON_BUFFER_DAYS} days ·{" "}
             </p>
           </div>
 
@@ -261,7 +316,7 @@ export default function RenewalsPage() {
           </Link>
         </div>
 
-        {hasHydrated && totalQueued > 0 && (
+        {!isLoading && totalQueued > 0 && (
           <div className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-md border border-line bg-line sm:max-w-md">
             <div className="bg-paper px-5 py-4">
               <p className="font-mono text-2xl tabular-nums text-ink">{currency(spendAtRisk)}</p>
@@ -280,9 +335,15 @@ export default function RenewalsPage() {
           </div>
         )}
 
-        {!hasHydrated ? (
+        {isLoading ? (
           <div className="mt-14 rounded-md border border-line bg-white px-6 py-16 text-center">
             <p className="font-mono text-sm text-ink/40">Loading…</p>
+          </div>
+        ) : isError ? (
+          <div className="mt-14 rounded-md border border-line bg-white px-6 py-16 text-center">
+            <p className="font-mono text-sm text-ink/40">
+              Something went wrong loading your contracts.
+            </p>
           </div>
         ) : totalQueued === 0 ? (
           <div className="mt-14 flex flex-col items-center rounded-md border border-line bg-white px-6 py-16 text-center">
@@ -291,8 +352,9 @@ export default function RenewalsPage() {
             </span>
             <h2 className="mt-5 font-display text-2xl font-medium text-ink">All clear</h2>
             <p className="mx-auto mt-3 max-w-md font-body text-sm text-ink/60">
-              No contracts are past their notice date or approaching one. Check back as renewal
-              dates get closer, or view every tracked contract in the meantime.
+              No contracts are due today or within the next {SOON_BUFFER_DAYS} days. If
+              something's further out than that, it'll show up here as it gets closer —
+              or view every tracked contract in the meantime.
             </p>
             <Link
               href="/dashboard/contracts"
@@ -363,7 +425,10 @@ export default function RenewalsPage() {
             onClose={() => {
               setShowForm(false);
               setEditingContract(null);
+              setSaveError(null);
             }}
+            isSaving={isSaving}
+            saveError={saveError}
           />
         )}
 
