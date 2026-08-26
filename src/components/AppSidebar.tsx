@@ -105,18 +105,13 @@ export function AppSidebar() {
   // User related 
   const userId = useAuthStore((state) => state.user?.id)
   const signOut = useAuthStore((state) => state.signOut)
-  
-  if (!userId) {
-    return
-  }
 
   const { 
     data: profile,
     isLoading,
     isError,
     error,
-  } = useUserProfileQuery(userId)
-
+  } = useUserProfileQuery(userId ?? null)
 
   // Best-effort: reads on mount, then re-reads whenever this tab regains
   // focus (covers "added a contract, tabbed away and back"). There's no
@@ -143,6 +138,10 @@ export function AppSidebar() {
       window.removeEventListener("storage", readCount);
     };
   }, [])
+
+  if (!userId) {
+    return null
+  }
 
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId)
 
