@@ -115,10 +115,11 @@ const helpNav = [
 export function AppSidebar() {
   const [workspaces, setWorkspaces] = useState<Workspace[]>(initialWorkspaces);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(
-    initialWorkspaces[0]?.id ?? null,
-  );
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [newWorkspaceName, setNewWorkspaceName] = useState("");
+    initialWorkspaces[0]?.id ?? null
+  )
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [newWorkspaceName, setNewWorkspaceName] = useState("")
+  // const [activeContractCount, setActiveContractCount] = useState<number | null>(null)
 
   // User related
   const userId = useAuthStore((state) => state.user?.id ?? null);
@@ -130,7 +131,7 @@ export function AppSidebar() {
     error,
   } = useUserProfileQuery(userId);
 
-  const orgId = profile?.org_id ?? null;
+  const orgId = profile?.org_id ?? null
 
   // Same query the contracts/renewals pages use — react-query caches this
   // by [ "contracts", orgId ], so this doesn't fire a second network
@@ -139,10 +140,8 @@ export function AppSidebar() {
   // (e.g. right after a create/update/delete mutation settles). That
   // replaces the old focus/storage-event polling entirely — the count is
   // now live within the tab, not just on refocus.
-  const { data: contracts = [] } = useContractsQuery(orgId);
-  const activeContractCount = contracts.filter(
-    (c) => c.status !== "cancelled",
-  ).length;
+  const { data: contracts = [] } = useContractsQuery(orgId)
+  const activeContractCount = contracts.filter((c) => c.status !== "cancelled").length
 
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
 

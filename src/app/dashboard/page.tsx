@@ -166,7 +166,7 @@ export default function DashboardPage() {
         <div className="px-5 pb-4 pt-2">
           <p className="font-display text-lg font-medium text-ink">{contract.company}</p>
           <p className="mt-1 font-body text-sm text-ink/50">{contract.name}</p>
-          <p className="mt-1 font-body text-sm text-ink/50">Owner: {contract.owner}</p>
+          <p className="mt-1 font-body text-sm text-ink/50">Owner: {contract.ownerIds}</p>
         </div>
 
         <div className="perforated-edge" />
