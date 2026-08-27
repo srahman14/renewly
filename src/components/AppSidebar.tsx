@@ -1,8 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import Link from "next/link"
-import { Contract, STORAGE_KEY } from "@/lib/contracts"
 import {
   Sidebar,
   SidebarContent,
@@ -61,6 +60,7 @@ import {
 } from "lucide-react"
 import { useAuthStore } from "@/lib/stores/auth.store"
 import { useUserProfileQuery } from "@/lib/queries/user.queries"
+import { useContractsQuery } from "@/lib/queries/contract.queries"
 
 type Workspace = {
   id: string
@@ -106,38 +106,28 @@ export function AppSidebar() {
   const userId = useAuthStore((state) => state.user?.id)
   const signOut = useAuthStore((state) => state.signOut)
 
-  const { 
+  // User related
+  const userId = useAuthStore((state) => state.user?.id ?? null)
+  const signOut = useAuthStore((state) => state.signOut)
+  const {
     data: profile,
     isLoading,
     isError,
     error,
+  } = useUserProfileQuery(userId)
+
+  const orgId = profile?.org_id ?? null
   } = useUserProfileQuery(userId ?? null)
 
-  // Best-effort: reads on mount, then re-reads whenever this tab regains
-  // focus (covers "added a contract, tabbed away and back"). There's no
-  // shared store yet (each page independently owns its own localStorage
-  // read), so an add/delete happening in the same tab right now won't be
-  // reflected here until the next focus/mount — a real gap, not a
-  // rounding error. Worth a shared ContractsContext if this needs to be
-  // truly live.
-  useEffect(() => {
-    function readCount() {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        const contracts: Contract[] = saved ? JSON.parse(saved) : [];
-        setActiveContractCount(contracts.filter((c) => c.status !== "cancelled").length);
-      } catch {
-        setActiveContractCount(0);
-      }
-    }
-    readCount();
-    window.addEventListener("focus", readCount);
-    window.addEventListener("storage", readCount);
-    return () => {
-      window.removeEventListener("focus", readCount);
-      window.removeEventListener("storage", readCount);
-    };
-  }, [])
+  // Same query the contracts/renewals pages use — react-query caches this
+  // by [ "contracts", orgId ], so this doesn't fire a second network
+  // request in the common case where a contracts page is also mounted;
+  // it just reads the shared cache and re-renders when it invalidates
+  // (e.g. right after a create/update/delete mutation settles). That
+  // replaces the old focus/storage-event polling entirely — the count is
+  // now live within the tab, not just on refocus.
+  const { data: contracts = [] } = useContractsQuery(orgId)
+  const activeContractCount = contracts.filter((c) => c.status !== "cancelled").length
 
   if (!userId) {
     return null
@@ -216,7 +206,7 @@ export function AppSidebar() {
                   <FileText />
                   <span>Contracts</span>
                 </SidebarMenuButton>
-                {activeContractCount !== null && activeContractCount > 0 && (
+                {activeContractCount > 0 && (
                   <SidebarMenuBadge>{activeContractCount}</SidebarMenuBadge>
                 )}
               </SidebarMenuItem>
@@ -301,7 +291,7 @@ export function AppSidebar() {
                 <ChevronDown className="ml-auto" />
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-[--radix-popper-anchor-width]">
-                <DropdownMenuItem>
+                <DropdownMenuItem render={<Link href="/dashboard/settings" />}>
                   <Settings className="mr-2 size-4" />
                   <span>Account Settings</span>
                 </DropdownMenuItem>
