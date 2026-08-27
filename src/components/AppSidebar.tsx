@@ -145,11 +145,9 @@ export function AppSidebar() {
     (c) => c.status !== "cancelled",
   ).length;
 
-  if (!userId) {
-    return null
-  }
-
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId)
+
+
 
   function handleCreateWorkspace() {
     const name = newWorkspaceName.trim();
