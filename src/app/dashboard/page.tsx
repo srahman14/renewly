@@ -1,14 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import ContractForm from "@/components/ContractForm";
 import ContractDetailsDialog from "@/components/ContractDetailsDialog";
 import {
   Contract,
-  Status,
-  STORAGE_KEY,
   currency,
   formatDate,
   getNextRenewalDate,
@@ -20,62 +18,94 @@ import {
   isFlagged,
   isMuted,
 } from "@/lib/contracts";
-import { DeadlinePill, RenewalWarningBadge, StatusDot, MuteIndicator, MuteToast, CategoryBadge, ActionsMenu, DeleteConfirmDialog } from "@/components/ContractUI";
+import {
+  DeadlinePill,
+  RenewalWarningBadge,
+  StatusDot,
+  MuteIndicator,
+  MuteToast,
+  CategoryBadge,
+  ActionsMenu,
+  DeleteConfirmDialog,
+} from "@/components/ContractUI";
+import { useAuthStore } from "@/lib/stores/auth.store";
+import { useUserProfileQuery } from "@/lib/queries/user.queries";
+import {
+  useContractsQuery,
+  useCreateContractMutation,
+  useUpdateContractMutation,
+  useDeleteContractMutation,
+} from "@/lib/queries/contract.queries";
 
 // How many rows show on the overview before sending people to /dashboard/contracts.
 // Full search/filter/sort now lives only on that page — this is a glance, not a workspace.
 const PREVIEW_COUNT = 4;
 
 export default function DashboardPage() {
-  const [contracts, setContracts] = useState<Contract[]>([]);
-  const [hasHydrated, setHasHydrated] = useState(false);
+  const userId = useAuthStore((state) => state.user?.id ?? null);
+  const { data: profile } = useUserProfileQuery(userId);
+  const orgId = profile?.org_id ?? null;
+
+  const { data: contracts = [], isLoading, isError } = useContractsQuery(orgId);
+  const createContractMutation = useCreateContractMutation(orgId);
+  const updateContractMutation = useUpdateContractMutation(orgId);
+  const deleteContractMutation = useDeleteContractMutation(orgId);
+
   const [showForm, setShowForm] = useState(false);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [viewingContract, setViewingContract] = useState<Contract | null>(null);
   const [deletingContract, setDeletingContract] = useState<Contract | null>(null);
   const [muteToast, setMuteToast] = useState<string | null>(null);
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) setContracts(JSON.parse(saved));
-    } finally {
-      setHasHydrated(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!hasHydrated) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(contracts));
-  }, [contracts, hasHydrated]);
-
   function saveContract(contract: Contract) {
-    setContracts((previous) => {
-      const exists = previous.some((item) => item.id === contract.id);
-      if (exists) {
-        return previous.map((item) => (item.id === contract.id ? contract : item));
-      }
-      return [...previous, contract];
-    });
+    const exists = contracts.some((item) => item.id === contract.id);
+
+    if (exists) {
+      updateContractMutation.mutate({
+        id: contract.id,
+        company: contract.company,
+        name: contract.name,
+        owner: contract.owner,
+        team: contract.team,
+        monthlySpend: contract.monthlySpend,
+        cycle: contract.cycle,
+        renewsOn: contract.renewsOn,
+        noticeDays: contract.noticeDays,
+        url: contract.url,
+        category: contract.category,
+      });
+    } else {
+      if (!orgId) return;
+      createContractMutation.mutate({
+        orgId,
+        company: contract.company,
+        name: contract.name,
+        owner: contract.owner,
+        team: contract.team,
+        monthlySpend: contract.monthlySpend,
+        cycle: contract.cycle,
+        renewsOn: contract.renewsOn,
+        noticeDays: contract.noticeDays,
+        url: contract.url,
+        category: contract.category,
+      });
+    }
+
     setShowForm(false);
     setEditingContract(null);
   }
 
   function cancelContract(id: string) {
-    setContracts((previous) =>
-      previous.map((item) => (item.id === id ? { ...item, status: "cancelled" as Status } : item))
-    );
+    updateContractMutation.mutate({ id, status: "cancelled" });
   }
 
   function deletePermanently(id: string) {
-    setContracts((previous) => previous.filter((item) => item.id !== id));
+    deleteContractMutation.mutate(id);
   }
 
   function toggleMute(contract: Contract) {
     const nowMuted = !isMuted(contract);
-    setContracts((previous) =>
-      previous.map((item) => (item.id === contract.id ? { ...item, muted: nowMuted } : item))
-    );
+    updateContractMutation.mutate({ id: contract.id, muted: nowMuted });
     setMuteToast(
       nowMuted
         ? `Notifications muted for ${contract.company}`
@@ -170,7 +200,7 @@ export default function DashboardPage() {
               Good morning.
             </h1>
             <p className="mt-2 max-w-lg font-body text-[15px] leading-relaxed text-ink/60">
-              {!hasHydrated
+              {isLoading
                 ? "\u00A0"
                 : contracts.length === 0
                 ? "Start tracking your subscriptions and avoid unexpected renewals."
@@ -198,9 +228,15 @@ export default function DashboardPage() {
           <StatCard label="Flagged for review" value={String(totals.flagged)} />
         </dl>
 
-        {!hasHydrated ? (
+        {isLoading ? (
           <div className="mt-14 rounded-md border border-line bg-white px-6 py-16 text-center">
             <p className="font-mono text-sm text-ink/40">Loading contracts…</p>
+          </div>
+        ) : isError ? (
+          <div className="mt-14 rounded-md border border-line bg-white px-6 py-16 text-center">
+            <p className="font-mono text-sm text-ink/40">
+              Something went wrong loading your contracts.
+            </p>
           </div>
         ) : contracts.length === 0 ? (
           <div className="mt-14 rounded-md border border-line bg-white px-6 py-16 text-center">

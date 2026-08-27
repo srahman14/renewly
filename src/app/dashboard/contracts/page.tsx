@@ -85,9 +85,17 @@ export default function AllContractsPage() {
   const [category, setCategory] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("deadline");
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Real mutation state, not a local guess — the form's Save button and
+  // "Saving..." label read directly from this, so they can't desync from
+  // what's actually happening on the network.
+  const isSaving =
+    createContractMutation.isPending || updateContractMutation.isPending;
 
   function saveContract(contract: Contract) {
     const exists = contracts.some((item) => item.id === contract.id);
+    setSaveError(null);
 
     if (exists) {
       updateContractMutation.mutate({
@@ -134,6 +142,7 @@ export default function AllContractsPage() {
 
   // TODO: fix the toggle mute function
   function toggleMute(contract: Contract) {
+     console.log("toggleMute called", contract.id, Date.now());
     const nowMuted = !isMuted(contract);
     updateContractMutation.mutate({ id: contract.id, muted: nowMuted });
     setMuteToast(
@@ -468,7 +477,10 @@ export default function AllContractsPage() {
             onClose={() => {
               setShowForm(false);
               setEditingContract(null);
+              setSaveError(null);
             }}
+            isSaving={isSaving}
+            saveError={saveError}
           />
         )}
 

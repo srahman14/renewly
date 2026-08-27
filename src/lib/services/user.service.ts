@@ -8,30 +8,32 @@ export interface UpdateProfileInput {
 }
 
 export async function fetchUserProfile(
-    userId: string
+  userId: string
 ): Promise<UserProfile> {
-    const supabase = createClient() 
+  const supabase = createClient()
 
-    const { data, error } = await supabase
-        .from("profiles")
-        .select(`
-            id, 
-            org_id,
-            full_name,
-            account_type`)
-        .eq("id", userId)
-        .single()
-    
-    if (error) {
-        throw error
-    }
+  const { data, error } = await supabase
+    .from("profiles")
+    .select(`
+      id, 
+      org_id,
+      full_name,
+      account_type,
+      email`)
+    .eq("id", userId)
+    .single()
 
-    return {
-        id: data.id,
-        org_id: data.org_id,
-        full_name: data.full_name,
-        account_type: data.account_type
-    }
+  if (error) {
+    throw error
+  }
+
+  return {
+    id: data.id,
+    org_id: data.org_id,
+    full_name: data.full_name,
+    account_type: data.account_type,
+    email: data.email,
+  }
 }
 
 export async function updateUserProfile(input: UpdateProfileInput): Promise<UserProfile> {
@@ -46,7 +48,7 @@ export async function updateUserProfile(input: UpdateProfileInput): Promise<User
     .from("profiles")
     .update(payload)
     .eq("id", userId)
-    .select("id, org_id, full_name, account_type")
+    .select("id, org_id, full_name, account_type, email")
     .single();
 
   if (error) throw error;
@@ -56,5 +58,6 @@ export async function updateUserProfile(input: UpdateProfileInput): Promise<User
     org_id: data.org_id,
     full_name: data.full_name,
     account_type: data.account_type,
+    email: data.email,
   };
 }
