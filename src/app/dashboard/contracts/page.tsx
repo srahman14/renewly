@@ -94,7 +94,7 @@ export default function AllContractsPage() {
         id: contract.id,
         company: contract.company,
         name: contract.name,
-        owner: contract.owner,
+        owner_ids: contract.ownerIds,
         team: contract.team,
         monthlySpend: contract.monthlySpend,
         cycle: contract.cycle,
@@ -109,7 +109,7 @@ export default function AllContractsPage() {
         orgId,
         company: contract.company,
         name: contract.name,
-        owner: contract.owner,
+        ownerIds: contract.ownerIds,
         team: contract.team,
         monthlySpend: contract.monthlySpend,
         cycle: contract.cycle,
@@ -366,7 +366,7 @@ export default function AllContractsPage() {
 
                             <div>
                               <p className="font-body text-sm text-ink/70">
-                                {contract.owner}
+                                {contract.ownerIds}
                               </p>
                               {contract.team && (
                                 <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-ink/35">
