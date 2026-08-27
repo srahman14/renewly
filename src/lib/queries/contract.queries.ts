@@ -49,7 +49,7 @@ export function useCreateContractMutation(orgId: string | null) {
         id: `optimistic-${Date.now()}`,
         company: input.company,
         name: input.name,
-        owner: input.owner,
+        ownerIds: input.ownerIds,
         team: input.team ?? "",
         monthlySpend: input.monthlySpend,
         cycle: input.cycle,

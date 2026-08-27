@@ -142,9 +142,9 @@ export default function SpendAnalyticsPage() {
   }, [active]);
 
   const byOwner = useMemo(() => {
-    const map = new Map<string, number>();
+    const map = new Map<string[], number>();
     for (const c of active) {
-      map.set(c.owner || "Unassigned", (map.get(c.owner || "Unassigned") ?? 0) + c.monthlySpend);
+      map.set(c.ownerIds || "Unassigned", (map.get(c.ownerIds || "Unassigned") ?? 0) + c.monthlySpend);
     }
     return Array.from(map.entries())
       .map(([label, value]) => ({ label, value }))

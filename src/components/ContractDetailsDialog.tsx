@@ -67,7 +67,7 @@ export default function ContractDetailsDialog({
           </p>
           <p className="mt-1 font-body text-sm text-ink/50">{contract.name}</p>
           <p className="mt-1 font-body text-sm text-ink/50">
-            Owner: {contract.owner}
+            Owner: {contract.ownerIds}
             {contract.team && <> · Team: {contract.team}</>}
           </p>
         </div>
