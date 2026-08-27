@@ -91,8 +91,6 @@ export default function ContractForm({
   function submit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (isSaving) return;
-
     // validation — was: !form.owner
     if (
       !form.company ||
@@ -270,16 +268,14 @@ export default function ContractForm({
           </Select>
 
           <div className="flex gap-2 items-center justify-start flex-wrap">
-            <div className="flex-1">
-              <label className="text-sm text-foreground">Owner/s</label>
-
-              <input
-                placeholder="Owner *"
-                value={form.ownerIds}
-                onChange={(e) => update("owner", e.target.value)}
-                className="w-full rounded-md border px-3 py-2"
-              />
-            </div>
+              <div className="flex-1 flex flex-col">
+                <label className="text-sm text-foreground">Owner/s</label>
+                
+                <OwnerMultiSelect
+                  value={form.ownerIds}
+                  onChange={updateOwnerIds}
+                />
+              </div>
             <div className="flex flex-col flex-1">
               <label className="text-sm text-foreground">Renewal date</label>
               <Popover>

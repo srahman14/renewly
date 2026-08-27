@@ -140,10 +140,16 @@ export function AppSidebar() {
   // (e.g. right after a create/update/delete mutation settles). That
   // replaces the old focus/storage-event polling entirely — the count is
   // now live within the tab, not just on refocus.
-  const { data: contracts = [] } = useContractsQuery(orgId)
-  const activeContractCount = contracts.filter((c) => c.status !== "cancelled").length
+  const { data: contracts = [] } = useContractsQuery(orgId);
+  const activeContractCount = contracts.filter(
+    (c) => c.status !== "cancelled",
+  ).length;
 
-  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
+  if (!userId) {
+    return null
+  }
+
+  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId)
 
   function handleCreateWorkspace() {
     const name = newWorkspaceName.trim();
