@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   PieChart,
   Pie,
@@ -14,11 +14,13 @@ import {
 } from "recharts";
 import {
   Contract,
-  STORAGE_KEY,
   currency,
   CATEGORIES,
 } from "@/lib/contracts";
 import { CategoryBadge } from "@/components/ContractUI";
+import { useAuthStore } from "@/lib/stores/auth.store";
+import { useUserProfileQuery } from "@/lib/queries/user.queries";
+import { useContractsQuery } from "@/lib/queries/contract.queries";
 
 // Real hex behind the Tailwind palette names already assigned to each
 // category in CATEGORIES (violet-500, blue-500, sky-500, ...). Recharts
@@ -99,17 +101,11 @@ function StatCard({
 }
 
 export default function SpendAnalyticsPage() {
-  const [contracts, setContracts] = useState<Contract[]>([]);
-  const [hasHydrated, setHasHydrated] = useState(false);
+  const userId = useAuthStore((state) => state.user?.id ?? null);
+  const { data: profile } = useUserProfileQuery(userId);
+  const orgId = profile?.org_id ?? null;
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) setContracts(JSON.parse(saved));
-    } finally {
-      setHasHydrated(true);
-    }
-  }, []);
+  const { data: contracts = [], isLoading, isError } = useContractsQuery(orgId);
 
   const active = useMemo(
     () => contracts.filter((c) => c.status !== "cancelled"),
@@ -183,7 +179,7 @@ export default function SpendAnalyticsPage() {
             Where the money goes.
           </h1>
           <p className="mt-2 max-w-lg font-body text-[15px] leading-relaxed text-ink/60">
-            {!hasHydrated
+            {isLoading
               ? "\u00A0"
               : hasSpendData
               ? "A breakdown of active spend by category, owner, and cost — plus what you've already saved by cancelling."
@@ -191,9 +187,15 @@ export default function SpendAnalyticsPage() {
           </p>
         </div>
 
-        {!hasHydrated ? (
+        {isLoading ? (
           <div className="mt-14 rounded-md border border-line bg-white px-6 py-16 text-center">
             <p className="font-mono text-sm text-ink/40">Loading…</p>
+          </div>
+        ) : isError ? (
+          <div className="mt-14 rounded-md border border-line bg-white px-6 py-16 text-center">
+            <p className="font-mono text-sm text-ink/40">
+              Something went wrong loading your contracts.
+            </p>
           </div>
         ) : !hasSpendData ? (
           <div className="mt-14 rounded-md border border-line bg-white px-6 py-16 text-center">

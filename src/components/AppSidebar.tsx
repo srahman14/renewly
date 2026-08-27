@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   Sidebar,
   SidebarContent,
@@ -15,19 +15,19 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuBadge,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+} from "@/components/ui/collapsible";
 import {
   Dialog,
   DialogContent,
@@ -35,9 +35,9 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   ChevronDown,
   ChevronsUpDown,
@@ -57,44 +57,63 @@ import {
   LifeBuoy,
   BookOpen,
   MessageCircle,
-} from "lucide-react"
-import { useAuthStore } from "@/lib/stores/auth.store"
-import { useUserProfileQuery } from "@/lib/queries/user.queries"
-import { useContractsQuery } from "@/lib/queries/contract.queries"
+} from "lucide-react";
+import { useAuthStore } from "@/lib/stores/auth.store";
+import { useUserProfileQuery } from "@/lib/queries/user.queries";
+import { useContractsQuery } from "@/lib/queries/contract.queries";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 type Workspace = {
-  id: string
-  name: string
-}
+  id: string;
+  name: string;
+};
 
 type NavItem = {
-  title: string
-  url: string
-  icon: typeof CalendarClock
-  badge?: string
-}
+  title: string;
+  url: string;
+  icon: typeof CalendarClock;
+  badge?: string;
+};
 
 // Hardcoded default workspace — UI-only state for now
-const initialWorkspaces: Workspace[] = [{ id: "ws_acme", name: "Acme Inc" }]
+const initialWorkspaces: Workspace[] = [{ id: "ws_acme", name: "Acme Inc" }];
 
-const renewalsNav: NavItem = { title: "Renewals", url: "/dashboard/renewals", icon: CalendarClock, badge: "3" }
-const analyticsNav: NavItem = { title: "Spend Analytics", url: "/dashboard/spend-analytics", icon: BarChart3 }
-const alertsNav: NavItem = { title: "Alerts", url: "/dashboard/alerts", icon: Bell, badge: "5" }
+const renewalsNav: NavItem = {
+  title: "Renewals",
+  url: "/dashboard/renewals",
+  icon: CalendarClock,
+  badge: "3",
+};
+const analyticsNav: NavItem = {
+  title: "Spend Analytics",
+  url: "/dashboard/spend-analytics",
+  icon: BarChart3,
+};
+const alertsNav: NavItem = {
+  title: "Alerts",
+  url: "/dashboard/alerts",
+  icon: Bell,
+  badge: "5",
+};
 
 const orgNav = [
   { title: "Members", url: "/org/members", icon: Users },
   { title: "Roles & Permissions", url: "/org/roles", icon: ShieldCheck },
-  { title: "Organization Settings", url: "/org/settings", icon: Building2 },
+  {
+    title: "Organization Settings",
+    url: "/dashbaord/settings",
+    icon: Building2,
+  },
   { title: "Integrations", url: "/org/integrations", icon: Plug },
-]
+];
 
 const helpNav = [
   { title: "Documentation", url: "/help/docs", icon: BookOpen },
   { title: "Contact Support", url: "/help/support", icon: MessageCircle },
-]
+];
 
 export function AppSidebar() {
-  const [workspaces, setWorkspaces] = useState<Workspace[]>(initialWorkspaces)
+  const [workspaces, setWorkspaces] = useState<Workspace[]>(initialWorkspaces);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(
     initialWorkspaces[0]?.id ?? null
   )
@@ -103,17 +122,16 @@ export function AppSidebar() {
   // const [activeContractCount, setActiveContractCount] = useState<number | null>(null)
 
   // User related
-  const userId = useAuthStore((state) => state.user?.id ?? null)
-  const signOut = useAuthStore((state) => state.signOut)
+  const userId = useAuthStore((state) => state.user?.id ?? null);
+  const signOut = useAuthStore((state) => state.signOut);
   const {
     data: profile,
     isLoading,
     isError,
     error,
-  } = useUserProfileQuery(userId)
+  } = useUserProfileQuery(userId);
 
   const orgId = profile?.org_id ?? null
-
 
   // Same query the contracts/renewals pages use — react-query caches this
   // by [ "contracts", orgId ], so this doesn't fire a second network
@@ -122,24 +140,43 @@ export function AppSidebar() {
   // (e.g. right after a create/update/delete mutation settles). That
   // replaces the old focus/storage-event polling entirely — the count is
   // now live within the tab, not just on refocus.
-  const { data: contracts = [] } = useContractsQuery(orgId)
-  const activeContractCount = contracts.filter((c) => c.status !== "cancelled").length
-
-  if (!userId) {
-    return null
-  }
+  const { data: contracts = [] } = useContractsQuery(orgId);
+  const activeContractCount = contracts.filter(
+    (c) => c.status !== "cancelled",
+  ).length;
 
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId)
 
+
+
   function handleCreateWorkspace() {
-    const name = newWorkspaceName.trim()
-    if (!name) return
-    const workspace: Workspace = { id: `ws_${Date.now()}`, name }
-    setWorkspaces((prev) => [...prev, workspace])
-    setActiveWorkspaceId(workspace.id)
-    setNewWorkspaceName("")
-    setIsCreateOpen(false)
+    const name = newWorkspaceName.trim();
+    if (!name) return;
+    const workspace: Workspace = { id: `ws_${Date.now()}`, name };
+    setWorkspaces((prev) => [...prev, workspace]);
+    setActiveWorkspaceId(workspace.id);
+    setNewWorkspaceName("");
+    setIsCreateOpen(false);
   }
+
+  const [fullName, setFullName] = useState("");
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (profile?.full_name) setFullName(profile.full_name);
+  }, [profile?.full_name]);
+
+  const initials = useMemo(() => {
+    const source = fullName || profile?.full_name || "";
+    return (
+      source
+        .trim()
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase())
+        .join("") || "?"
+    );
+  }, [fullName, profile?.full_name]);
 
   return (
     <Sidebar className="max-w-content" variant="sidebar">
@@ -149,7 +186,9 @@ export function AppSidebar() {
             <DropdownMenu>
               <DropdownMenuTrigger render={<SidebarMenuButton />}>
                 <Building2 />
-                <span>{activeWorkspace ? activeWorkspace.name : "No workspace"}</span>
+                <span>
+                  {activeWorkspace ? activeWorkspace.name : "No workspace"}
+                </span>
                 <ChevronsUpDown className="ml-auto" />
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-[--radix-popper-anchor-width]">
@@ -160,7 +199,9 @@ export function AppSidebar() {
                       onClick={() => setActiveWorkspaceId(ws.id)}
                     >
                       <span className="flex-1">{ws.name}</span>
-                      {ws.id === activeWorkspaceId && <Check className="size-4" />}
+                      {ws.id === activeWorkspaceId && (
+                        <Check className="size-4" />
+                      )}
                     </DropdownMenuItem>
                   ))
                 ) : (
@@ -198,7 +239,9 @@ export function AppSidebar() {
 
               {/* Contracts */}
               <SidebarMenuItem>
-                <SidebarMenuButton render={<Link href="/dashboard/contracts" />}>
+                <SidebarMenuButton
+                  render={<Link href="/dashboard/contracts" />}
+                >
                   <FileText />
                   <span>Contracts</span>
                 </SidebarMenuButton>
@@ -282,8 +325,25 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger render={<SidebarMenuButton />}>
-                <User2 />
-                {profile?.full_name}
+                <Avatar className="size-8">
+                  {avatarPreview && (
+                    <AvatarImage
+                      src={avatarPreview}
+                      alt={profile?.full_name ?? "You"}
+                    />
+                  )}
+                  <AvatarFallback className="bg-navy font-display text-lg font-semibold text-paper">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col">
+                  <p className="truncate font-body font-medium text-ink">
+                    {profile?.full_name}
+                  </p>
+                  <p className="truncate font-body text-xs text-ink/50">
+                    {profile?.email}
+                  </p>
+                </div>
                 <ChevronDown className="ml-auto" />
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-[--radix-popper-anchor-width]">
@@ -305,7 +365,8 @@ export function AppSidebar() {
           <DialogHeader>
             <DialogTitle>Create Workspace</DialogTitle>
             <DialogDescription>
-              Give your workspace a name. You can invite teammates and add contracts after.
+              Give your workspace a name. You can invite teammates and add
+              contracts after.
             </DialogDescription>
           </DialogHeader>
           <Input
@@ -313,19 +374,22 @@ export function AppSidebar() {
             value={newWorkspaceName}
             onChange={(e) => setNewWorkspaceName(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") handleCreateWorkspace()
+              if (e.key === "Enter") handleCreateWorkspace();
             }}
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreateWorkspace} disabled={!newWorkspaceName.trim()}>
+            <Button
+              onClick={handleCreateWorkspace}
+              disabled={!newWorkspaceName.trim()}
+            >
               Create
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </Sidebar>
-  )
+  );
 }
