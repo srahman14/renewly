@@ -100,6 +100,11 @@ export function AppSidebar() {
   )
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [newWorkspaceName, setNewWorkspaceName] = useState("")
+  const [activeContractCount, setActiveContractCount] = useState<number | null>(null)
+  
+  // User related 
+  const userId = useAuthStore((state) => state.user?.id)
+  const signOut = useAuthStore((state) => state.signOut)
 
   // User related
   const userId = useAuthStore((state) => state.user?.id ?? null)
@@ -112,6 +117,7 @@ export function AppSidebar() {
   } = useUserProfileQuery(userId)
 
   const orgId = profile?.org_id ?? null
+  } = useUserProfileQuery(userId ?? null)
 
   // Same query the contracts/renewals pages use — react-query caches this
   // by [ "contracts", orgId ], so this doesn't fire a second network
@@ -122,6 +128,10 @@ export function AppSidebar() {
   // now live within the tab, not just on refocus.
   const { data: contracts = [] } = useContractsQuery(orgId)
   const activeContractCount = contracts.filter((c) => c.status !== "cancelled").length
+
+  if (!userId) {
+    return null
+  }
 
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId)
 
