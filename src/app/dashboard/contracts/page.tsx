@@ -98,57 +98,34 @@ export default function AllContractsPage() {
     setSaveError(null);
 
     if (exists) {
-      updateContractMutation.mutate(
-        {
-          id: contract.id,
-          company: contract.company,
-          name: contract.name,
-          owner: contract.owner,
-          team: contract.team,
-          monthlySpend: contract.monthlySpend,
-          cycle: contract.cycle,
-          renewsOn: contract.renewsOn,
-          noticeDays: contract.noticeDays,
-          url: contract.url,
-          category: contract.category,
-        },
-        {
-          onSuccess: () => {
-            setShowForm(false);
-            setEditingContract(null);
-          },
-          onError: () => setSaveError("Couldn't save — please try again."),
-        },
-      );
+      updateContractMutation.mutate({
+        id: contract.id,
+        company: contract.company,
+        name: contract.name,
+        owner_ids: contract.ownerIds,
+        team: contract.team,
+        monthlySpend: contract.monthlySpend,
+        cycle: contract.cycle,
+        renewsOn: contract.renewsOn,
+        noticeDays: contract.noticeDays,
+        url: contract.url,
+        category: contract.category,
+      });
     } else {
-      if (!orgId) {
-        setSaveError(
-          "Still loading your profile — please wait a second and try again.",
-        );
-        return;
-      }
-      createContractMutation.mutate(
-        {
-          orgId,
-          company: contract.company,
-          name: contract.name,
-          owner: contract.owner,
-          team: contract.team,
-          monthlySpend: contract.monthlySpend,
-          cycle: contract.cycle,
-          renewsOn: contract.renewsOn,
-          noticeDays: contract.noticeDays,
-          url: contract.url,
-          category: contract.category,
-        },
-        {
-          onSuccess: () => {
-            setShowForm(false);
-            setEditingContract(null);
-          },
-          onError: () => setSaveError("Couldn't save — please try again."),
-        },
-      );
+      if (!orgId) return;
+      createContractMutation.mutate({
+        orgId,
+        company: contract.company,
+        name: contract.name,
+        ownerIds: contract.ownerIds,
+        team: contract.team,
+        monthlySpend: contract.monthlySpend,
+        cycle: contract.cycle,
+        renewsOn: contract.renewsOn,
+        noticeDays: contract.noticeDays,
+        url: contract.url,
+        category: contract.category,
+      });
     }
   }
 
@@ -395,7 +372,7 @@ export default function AllContractsPage() {
 
                             <div>
                               <p className="font-body text-sm text-ink/70">
-                                {contract.owner}
+                                {contract.ownerIds}
                               </p>
                               {contract.team && (
                                 <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-ink/35">

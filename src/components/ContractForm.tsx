@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { OwnerMultiSelect } from "./OwnerMultiSelect";
 
 interface Props {
   initialData: Contract | null;
@@ -51,7 +52,7 @@ export default function ContractForm({
     renewalDate: initialData?.renewsOn
       ? toDateOnlyString(parseDateOnly(initialData.renewsOn))
       : "",
-    owner: initialData?.owner ?? "",
+    ownerIds: initialData?.ownerIds ?? [],
     team: initialData?.team ?? "",
     category: initialData?.category ?? "",
     noticeDays: initialData?.noticeDays?.toString() ?? "",
@@ -80,18 +81,24 @@ export default function ContractForm({
     }));
   }
 
+  // dedicated setter — the generic update() only handles string | number | null,
+  // not string[], so this stays separate rather than widening that type
+  // for one field
+  function updateOwnerIds(ids: string[]) {
+    setForm((previous) => ({ ...previous, ownerIds: ids }));
+  }
+
   function submit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (isSaving) return;
-
+    // validation — was: !form.owner
     if (
       !form.company ||
       form.monthlySpend === "" ||
       form.monthlySpend === null ||
       !form.cycle ||
       !form.renewalDate ||
-      !form.owner ||
+      form.ownerIds.length === 0 ||
       !form.category ||
       form.noticeDays === "" ||
       form.noticeDays === null
@@ -125,7 +132,8 @@ export default function ContractForm({
       id: initialData?.id ?? crypto.randomUUID(),
       company: form.company,
       name: form.name,
-      owner: form.owner,
+
+      ownerIds: form.ownerIds,
       team: form.team,
       category: form.category,
       url: form.url.trim() ? normaliseUrl(form.url) : undefined,
@@ -155,7 +163,7 @@ export default function ContractForm({
       monthlySpend: "",
       cycle: "",
       renewalDate: "",
-      owner: "",
+      ownerIds: [],
       team: "",
       category: "",
       noticeDays: "",
@@ -172,7 +180,10 @@ export default function ContractForm({
             <h2 className="font-display text-xl font-medium text-ink">
               {initialData ? "Edit Contract" : "Add Contract"}
             </h2>
-            <p className="text-sm text-muted-foreground">Add the contract details to track key dates, stay ahead of renewals, and avoid missed deadlines. </p>
+            <p className="text-sm text-muted-foreground">
+              Add the contract details to track key dates, stay ahead of
+              renewals, and avoid missed deadlines.{" "}
+            </p>
           </div>
 
           <button
@@ -257,15 +268,14 @@ export default function ContractForm({
           </Select>
 
           <div className="flex gap-2 items-center justify-start flex-wrap">
-            <div className="flex-1">
-              <label className="text-sm text-foreground">Owner/s</label>
-              <input
-                placeholder="Owner *"
-                value={form.owner}
-                onChange={(e) => update("owner", e.target.value)}
-                className="w-full rounded-md border px-3 py-2"
-              />
-            </div>
+              <div className="flex-1 flex flex-col">
+                <label className="text-sm text-foreground">Owner/s</label>
+                
+                <OwnerMultiSelect
+                  value={form.ownerIds}
+                  onChange={updateOwnerIds}
+                />
+              </div>
             <div className="flex flex-col flex-1">
               <label className="text-sm text-foreground">Renewal date</label>
               <Popover>

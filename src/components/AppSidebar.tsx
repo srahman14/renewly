@@ -115,10 +115,11 @@ const helpNav = [
 export function AppSidebar() {
   const [workspaces, setWorkspaces] = useState<Workspace[]>(initialWorkspaces);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(
-    initialWorkspaces[0]?.id ?? null,
-  );
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [newWorkspaceName, setNewWorkspaceName] = useState("");
+    initialWorkspaces[0]?.id ?? null
+  )
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [newWorkspaceName, setNewWorkspaceName] = useState("")
+  // const [activeContractCount, setActiveContractCount] = useState<number | null>(null)
 
   // User related
   const userId = useAuthStore((state) => state.user?.id ?? null);
@@ -132,6 +133,7 @@ export function AppSidebar() {
 
   const orgId = profile?.org_id ?? null;
 
+
   // Same query the contracts/renewals pages use — react-query caches this
   // by [ "contracts", orgId ], so this doesn't fire a second network
   // request in the common case where a contracts page is also mounted;
@@ -144,7 +146,11 @@ export function AppSidebar() {
     (c) => c.status !== "cancelled",
   ).length;
 
-  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
+  if (!userId) {
+    return null
+  }
+
+  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId)
 
   function handleCreateWorkspace() {
     const name = newWorkspaceName.trim();

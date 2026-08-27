@@ -193,7 +193,7 @@ export default function RenewalsPage() {
       >
         <div className="flex items-center justify-between px-5 pt-5">
           <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink/40">
-            {contract.owner}
+            {contract.ownerIds}
             {contract.team && ` · ${contract.team}`}
           </span>
           <CategoryBadge category={contract.category} />
