@@ -33,7 +33,9 @@ export default function RegisterPage() {
   const [accountType, setAccountType] = useState<AccountType>('individual')
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
-
+  // For when user is invited and they click login will be redirected to invite page
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect");
   const copy = COPY[accountType]
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -45,10 +47,6 @@ export default function RegisterPage() {
     const email = String(formData.get('email') ?? '').trim()
     const password = String(formData.get('password') ?? '')
     const companyName = String(formData.get('company') ?? '').trim()
-
-    // For when user is invited and they click login will be redirected to invite page
-    const searchParams = useSearchParams();
-    const redirectTo = searchParams.get("redirect");
     
     if (accountType === 'team' && !companyName) {
       setFormError('Company name is required for a team workspace.')

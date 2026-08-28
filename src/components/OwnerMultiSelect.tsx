@@ -12,13 +12,8 @@ import {
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { useUserProfileQuery } from "@/lib/queries/user.queries";
 import { useOrgMembersQuery } from "@/lib/queries/org.queries";
-
-function initialsFromName(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
+import { initialsFromName } from "@/lib/utils/name";
+import { Avatar, AvatarFallback } from "./ui/avatar";
 
 interface OwnerMultiSelectProps {
   value: string[]; // selected userIds
@@ -58,11 +53,11 @@ export function OwnerMultiSelect({ value, onChange }: OwnerMultiSelectProps) {
             <div className="flex items-center gap-2 overflow-hidden">
               {visibleSelected.map((member) => (
                 <div key={member.userId} className="flex shrink-0 items-center gap-1.5">
-                  {/* <Avatar className="size-6">
+                  <Avatar className="size-6">
                     <AvatarFallback className="bg-navy font-display text-[10px] font-semibold text-paper">
                       {initialsFromName(member.fullName)}
                     </AvatarFallback>
-                  </Avatar> */}
+                  </Avatar>
                   <span className="truncate text-sm text-ink">{member.fullName}</span>
                 </div>
               ))}

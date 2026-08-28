@@ -97,7 +97,7 @@ const alertsNav: NavItem = {
 };
 
 const orgNav = [
-  { title: "Members", url: "/org/members", icon: Users },
+  { title: "Members", url: "/dashboard/org/members", icon: Users },
   { title: "Roles & Permissions", url: "/org/roles", icon: ShieldCheck },
   {
     title: "Organization Settings",
