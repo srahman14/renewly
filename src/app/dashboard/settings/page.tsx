@@ -30,6 +30,8 @@ import {
   Check,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { InviteRole } from "@/lib/services/invite.service"
+import { useCreateInviteMutation, useInvitesQuery } from "@/lib/queries/invite.queries"
 
 type TabId = "general" | "security" | "users" | "notifications"
 
@@ -265,32 +267,83 @@ function UsersTab() {
     setMembers((prev) => prev.filter((m) => m.id !== id))
   }
 
+    const userId = useAuthStore((state) => state.user?.id ?? null);
+  const { data: profile } = useUserProfileQuery(userId);
+  const orgId = profile?.org_id ?? null;
+
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<InviteRole>("member");
+  const [copiedLink, setCopiedLink] = useState<string | null>(null);
+
+  const createInviteMutation = useCreateInviteMutation(orgId);
+  const { data: invites = [] } = useInvitesQuery(orgId);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim() || !userId) return;
+
+    createInviteMutation.mutate(
+      { email, role, invitedBy: userId },
+      {
+        onSuccess: (invite) => {
+          const link = `${window.location.origin}/invite/${invite.token}`;
+          setCopiedLink(link);
+          navigator.clipboard?.writeText(link);
+          setEmail("");
+        },
+      }
+    );
+  }
+
+
   return (
     <div className="space-y-6">
       <section className="rounded-md border border-line bg-white p-6">
         <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink/40">Invite</p>
-        <div className="mt-4 flex gap-2">
-          <Input
-            type="email"
-            placeholder="teammate@company.com"
-            value={inviteEmail}
-            onChange={(e) => setInviteEmail(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleInvite()
-            }}
-            className="rounded-[4px]"
-          />
-          <Button
-            onClick={handleInvite}
-            disabled={!inviteEmail.trim()}
-            className="shrink-0 rounded-[4px] bg-ink hover:bg-navy"
-          >
-            Send invite
-          </Button>
-        </div>
-        <NotWiredNote>
-          Adds to this list only — no invite email sends and nothing persists past a refresh.
-        </NotWiredNote>
+    <div>
+      <form onSubmit={handleSubmit} className="flex gap-2">
+        <input
+          type="email"
+          placeholder="teammate@company.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="flex-1 rounded-md border px-3 py-2"
+          required
+        />
+        <select
+          value={role}
+          onChange={(e) => setRole(e.target.value as InviteRole)}
+          className="rounded-md border px-3 py-2"
+        >
+          <option value="member">Member</option>
+          <option value="owner">Owner</option>
+        </select>
+        <button type="submit" disabled={createInviteMutation.isPending}>
+          {createInviteMutation.isPending ? "Sending…" : "Invite"}
+        </button>
+      </form>
+
+      {createInviteMutation.isError && (
+        <p className="text-sm text-red-600">
+          {(createInviteMutation.error as Error).message}
+        </p>
+      )}
+
+      {copiedLink && (
+        <p className="text-sm text-ink/60">
+          Invite link copied to clipboard — email sending isn't wired up yet,
+          so share this link directly for now: {copiedLink}
+        </p>
+      )}
+
+      <ul className="mt-4">
+        {invites.map((invite) => (
+          <li key={invite.id} className="flex items-center justify-between">
+            <span>{invite.email} — {invite.role} — {invite.status}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
       </section>
 
       <section className="rounded-md border border-line bg-white">
