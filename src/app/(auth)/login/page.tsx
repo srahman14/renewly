@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { redirect, useRouter, useSearchParams } from 'next/navigation'
 import { Mail } from 'lucide-react'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
@@ -25,6 +25,10 @@ export default function LoginPage() {
     const formData = new FormData(event.currentTarget)
     const email = String(formData.get('email') ?? '').trim()
     const password = String(formData.get('password') ?? '')
+    
+    // For when user is invited and they click login will be redirected to invite page
+    const searchParams = useSearchParams();
+    const redirectTo = searchParams.get("redirect");
 
     setSubmitting(true)
     const result = await signIn(email, password)
@@ -35,7 +39,7 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/dashboard')
+    router.push(redirectTo ?? "/dashboard")
   }
 
   return (

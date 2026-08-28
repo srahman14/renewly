@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Building2, Mail, User, Users } from 'lucide-react'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
@@ -46,6 +46,10 @@ export default function RegisterPage() {
     const password = String(formData.get('password') ?? '')
     const companyName = String(formData.get('company') ?? '').trim()
 
+    // For when user is invited and they click login will be redirected to invite page
+    const searchParams = useSearchParams();
+    const redirectTo = searchParams.get("redirect");
+    
     if (accountType === 'team' && !companyName) {
       setFormError('Company name is required for a team workspace.')
       return
@@ -66,7 +70,7 @@ export default function RegisterPage() {
       return
     }
 
-   router.push('/onboarding')
+   router.push(redirectTo ?? '/onboarding')
   }
 
   return (
