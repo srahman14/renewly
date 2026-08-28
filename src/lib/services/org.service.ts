@@ -15,6 +15,31 @@ interface MemberRow {
   created_at: string;
 }
 
+// org.service.ts — add to existing file
+export interface Org {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export async function fetchOrg(orgId: string): Promise<Org> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("orgs")
+    .select("id, name, created_at")
+    .eq("id", orgId)
+    .single();
+
+  if (error) throw error;
+
+  return {
+    id: data.id,
+    name: data.name,
+    createdAt: data.created_at,
+  };
+}
+
 // Two queries, merged client-side — org_members and profiles both
 // reference auth.users, but not each other, so PostgREST can't embed
 // one inside the other. See fetchOrgMembers for the full explanation.

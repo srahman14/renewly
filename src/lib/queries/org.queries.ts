@@ -5,11 +5,26 @@ import {
   removeMember,
   type MemberRole,
   type OrgMember,
+  fetchOrg,
 } from "@/lib/services/org.service";
 
+// org.queries.ts — add to existing file
 export const orgKeys = {
   members: (orgId: string | null) => ["org-members", orgId] as const,
+  detail: (orgId: string | null) => ["org", orgId] as const, // extend the existing key factory
 };
+
+export function useOrgQuery(orgId: string | null) {
+  return useQuery({
+    queryKey: orgKeys.detail(orgId),
+    queryFn: () => {
+      if (!orgId) throw new Error("Org ID is required");
+      return fetchOrg(orgId);
+    },
+    enabled: !!orgId,
+    staleTime: 1000 * 60 * 5,
+  });
+}
 
 export function useOrgMembersQuery(orgId: string | null) {
   return useQuery({

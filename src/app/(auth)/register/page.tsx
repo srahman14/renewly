@@ -1,9 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Building2, Mail, User, Users } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import type { FormEvent } from 'react'
 import { AuthBrandPanel } from '@/components/renewly/auth-brand-panel'
 import { Logo } from '@/components/renewly/logo'
@@ -26,14 +26,16 @@ const COPY: Record<AccountType, { eyebrow: string; heading: string; subtext: str
   },
 }
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter()
   const signUp = useAuthStore((state) => state.signUp)
 
   const [accountType, setAccountType] = useState<AccountType>('individual')
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
-
+  // For when user is invited and they click login will be redirected to invite page
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect");
   const copy = COPY[accountType]
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -45,7 +47,7 @@ export default function RegisterPage() {
     const email = String(formData.get('email') ?? '').trim()
     const password = String(formData.get('password') ?? '')
     const companyName = String(formData.get('company') ?? '').trim()
-
+    
     if (accountType === 'team' && !companyName) {
       setFormError('Company name is required for a team workspace.')
       return
@@ -66,7 +68,7 @@ export default function RegisterPage() {
       return
     }
 
-   router.push('/onboarding')
+   router.push(redirectTo ?? '/onboarding')
   }
 
   return (
@@ -227,5 +229,13 @@ export default function RegisterPage() {
 
       <AuthBrandPanel />
     </main>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterForm />
+    </Suspense>
   )
 }
