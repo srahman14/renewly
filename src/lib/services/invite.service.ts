@@ -21,6 +21,8 @@ export interface InvitePreview {
   role?: InviteRole;
   inviterName?: string;
   invitedEmail?: string;
+  viewerCurrentOrgName?: string | null;
+  viewerCurrentOrgWillBeDeleted?: boolean | null;
 }
 
 export async function fetchInvites(orgId: string): Promise<Invite[]> {
@@ -107,6 +109,8 @@ export async function getInvitePreview(token: string): Promise<InvitePreview> {
     role: data.role,
     inviterName: data.inviter_name,
     invitedEmail: data.invited_email,
+    viewerCurrentOrgName: data.viewer_current_org_name,
+    viewerCurrentOrgWillBeDeleted: data.viewer_current_org_will_be_deleted,
   };
 }
 
@@ -125,4 +129,18 @@ export async function acceptInvite(token: string): Promise<AcceptInviteResult> {
   if (error) throw error;
 
   return { orgId: data.org_id, oldOrgDeleted: data.old_org_deleted };
+}
+
+// For Resend
+export async function sendInviteEmail(token: string): Promise<void> {
+  const response = await fetch("/api/invites/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token }),
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error ?? "Failed to send invite email");
+  }
 }

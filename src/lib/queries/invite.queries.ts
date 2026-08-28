@@ -6,6 +6,7 @@ import {
   getInvitePreview,
   acceptInvite,
   type CreateInviteInput,
+  sendInviteEmail,
 } from "@/lib/services/invite.service";
 
 export const inviteKeys = {
@@ -68,5 +69,13 @@ export function useAcceptInviteMutation() {
     // No cache invalidation here on purpose — org_id just changed entirely,
     // so the caller should redirect + let every query naturally refetch
     // against the new orgId, rather than trying to invalidate the old one.
+  });
+}
+
+// For resend
+// add to existing file
+export function useSendInviteEmailMutation() {
+  return useMutation({
+    mutationFn: (token: string) => sendInviteEmail(token),
   });
 }
