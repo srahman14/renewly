@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Building2, Mail, User, Users } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import type { FormEvent } from 'react'
 import { AuthBrandPanel } from '@/components/renewly/auth-brand-panel'
 import { Logo } from '@/components/renewly/logo'
@@ -26,7 +26,7 @@ const COPY: Record<AccountType, { eyebrow: string; heading: string; subtext: str
   },
 }
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter()
   const signUp = useAuthStore((state) => state.signUp)
 
@@ -229,5 +229,13 @@ export default function RegisterPage() {
 
       <AuthBrandPanel />
     </main>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterForm />
+    </Suspense>
   )
 }
