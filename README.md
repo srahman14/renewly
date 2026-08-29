@@ -1,6 +1,8 @@
-# Renewly
+<div align="center">
+  <img src="./public/icons/watermark-logo-light.png" alt="renewly-logo"/>
+</div>
 
-A shared dashboard for small teams to track every paid tool and contract they use, cost, renewal date, owner, and cancellation notice window — with alerts before auto-renewal traps hit.
+A shared dashboard for small teams to track every paid tool and contract they use, cost, renewal date, owner, and cancellation notice window, with alerts before auto-renewal traps hit.
 
 ## Why this exists
 
@@ -101,7 +103,6 @@ Every table is multi-tenant-isolated via **Row Level Security**, scoped through 
 
 ```bash
 npm install
-cp .env.local.example .env.local   # fill in the values below
 npm run dev
 ```
 
@@ -115,7 +116,7 @@ RESEND_API_KEY=                  # server-only
 NEXT_PUBLIC_APP_URL=             # used to build invite links in emails
 ```
 
-`SUPABASE_SERVICE_ROLE_KEY` and `RESEND_API_KEY` are only ever read inside `app/api/*` route handlers or `lib/supabase/admin.ts` — if either turns up imported into a client component, that's a bug.
+`SUPABASE_SERVICE_ROLE_KEY` and `RESEND_API_KEY` are only ever read inside `app/api/*` route handlers or `lib/supabase/admin.ts`.
 
 Database schema and RLS policies currently need to be applied by hand via the Supabase SQL editor before running the app against a fresh project, since there's no committed migration history yet (see Known limitations).
 
@@ -137,15 +138,3 @@ src/
 │   ├── supabase/                # client, server, and admin (service-role) Supabase client factories
 │   └── utils/
 ```
-
-## Roadmap
-
-Roughly in priority order:
-
-1. **Export the schema into version-controlled migrations.** Everything currently lives only in the live Supabase project — the single biggest risk to onboarding a new contributor or recovering from a mistake.
-2. **Notice-period deadline engine.** The actual core mechanic of the product — deriving a real cancellation deadline from renewal date + notice rule + cycle, correctly, across timezone and month-boundary edge cases.
-3. **Idempotent notification worker.** Scheduled job (cron or queue) that sends reminders ahead of computed deadlines, designed so a duplicate run or mid-batch restart can't double-send.
-4. **Ownership transfer flow**, unblocking account deletion and org-leaving for co-owners.
-5. **Verified sending domain in Resend**, so invites can reach real recipients rather than only the developer's own inbox.
-6. **Spend analytics / forecasting** as a proper feature: normalized aggregation across billing cycles, a simple next-quarter forecast, and duplicate/overlap detection across tagged categories.
-7. **RLS review** once/if roles beyond owner/member are introduced.
