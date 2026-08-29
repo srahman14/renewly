@@ -44,6 +44,10 @@ import {
   useUpdateContractMutation,
   useDeleteContractMutation,
 } from "@/lib/queries/contract.queries";
+import {
+  useOrgMembersQuery,
+  useCurrentMemberRoleQuery,
+} from "@/lib/queries/org.queries";
 
 type StatusTabKey = "active" | "flagged" | "cancelled";
 
@@ -74,6 +78,17 @@ export default function AllContractsPage() {
   const updateContractMutation = useUpdateContractMutation(orgId);
   const deleteContractMutation = useDeleteContractMutation(orgId);
 
+  // Owner names for the Owner column, and current user's role for gating
+  // write actions. RLS enforces the real boundary server-side — this is
+  // just so the UI doesn't show controls that would fail anyway.
+  const { data: orgMembers = [] } = useOrgMembersQuery(orgId);
+  const nameByUserId = useMemo(
+    () => new Map(orgMembers.map((m) => [m.userId, m.fullName])),
+    [orgMembers]
+  );
+  const { data: memberRole } = useCurrentMemberRoleQuery(orgId, userId);
+  const isOwner = memberRole === "owner";
+
   const [showForm, setShowForm] = useState(false);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [viewingContract, setViewingContract] = useState<Contract | null>(null);
@@ -87,9 +102,6 @@ export default function AllContractsPage() {
   const [sort, setSort] = useState<SortKey>("deadline");
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  // Real mutation state, not a local guess — the form's Save button and
-  // "Saving..." label read directly from this, so they can't desync from
-  // what's actually happening on the network.
   const isSaving =
     createContractMutation.isPending || updateContractMutation.isPending;
 
@@ -140,9 +152,7 @@ export default function AllContractsPage() {
     deleteContractMutation.mutate(id);
   }
 
-  // TODO: fix the toggle mute function
   function toggleMute(contract: Contract) {
-     console.log("toggleMute called", contract.id, Date.now());
     const nowMuted = !isMuted(contract);
     updateContractMutation.mutate({ id: contract.id, muted: nowMuted });
     setMuteToast(
@@ -230,12 +240,14 @@ export default function AllContractsPage() {
             </p>
           </div>
 
-          <button
-            onClick={() => setShowForm(true)}
-            className="inline-block self-start rounded-[4px] bg-amber px-5 py-2.5 font-body text-[15px] font-medium text-ink transition-colors hover:bg-amber-light"
-          >
-            + Add contract
-          </button>
+          {isOwner && (
+            <button
+              onClick={() => setShowForm(true)}
+              className="inline-block self-start rounded-[4px] bg-amber px-5 py-2.5 font-body text-[15px] font-medium text-ink transition-colors hover:bg-amber-light"
+            >
+              + Add contract
+            </button>
+          )}
         </div>
 
         {isLoading ? (
@@ -348,6 +360,9 @@ export default function AllContractsPage() {
                     <div className="divide-y divide-line">
                       {filtered.map((contract) => {
                         const cancelled = contract.status === "cancelled";
+                        const ownerNames = contract.ownerIds
+                          .map((id) => nameByUserId.get(id) ?? "Unknown")
+                          .join(", ");
                         return (
                           <div
                             key={contract.id}
@@ -365,6 +380,7 @@ export default function AllContractsPage() {
                                   <MuteIndicator
                                     contract={contract}
                                     onToggle={() => toggleMute(contract)}
+                                    disabled={!isOwner}
                                   />
                                 </p>
                                 <p className="text-sm text-ink/50">
@@ -375,7 +391,7 @@ export default function AllContractsPage() {
 
                             <div>
                               <p className="font-body text-sm text-ink/70">
-                                {contract.ownerIds}
+                                {ownerNames || "—"}
                               </p>
                               {contract.team && (
                                 <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-ink/35">
@@ -412,6 +428,7 @@ export default function AllContractsPage() {
 
                             <ActionsMenu
                               isCancelled={cancelled}
+                              isOwner={isOwner}
                               onViewDetails={() => setViewingContract(contract)}
                               onEdit={() => {
                                 setEditingContract(contract);
@@ -459,12 +476,14 @@ export default function AllContractsPage() {
                   Add your first subscription to start tracking renewals and
                   cancellation deadlines.
                 </p>
-                <button
-                  onClick={() => setShowForm(true)}
-                  className="mt-6 rounded-[4px] bg-ink px-5 py-3 font-body text-sm font-medium text-paper hover:bg-navy"
-                >
-                  Add your first contract
-                </button>
+                {isOwner && (
+                  <button
+                    onClick={() => setShowForm(true)}
+                    className="mt-6 rounded-[4px] bg-ink px-5 py-3 font-body text-sm font-medium text-paper hover:bg-navy"
+                  >
+                    Add your first contract
+                  </button>
+                )}
               </div>
             )}
           </>
