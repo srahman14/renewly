@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 
 const NAV_LINKS = [
@@ -19,7 +20,6 @@ export default function Navbar() {
       >
         <a
           href="/"
-          className="flex items-center gap-2 font-display text-xl font-medium tracking-tight text-ink"
         >
           {/* <span
             aria-hidden="true"
@@ -27,7 +27,14 @@ export default function Navbar() {
           >
             R
           </span> */}
-          Renewly
+              <Image
+                src="/icons/watermark-logo-dark.png"
+                alt="icon"
+                width={140}
+                height={48}
+                className="object-contain shrink-0 cursor-pointer"
+                priority
+              />
         </a>
 
         <div className="hidden items-center gap-8 md:flex">

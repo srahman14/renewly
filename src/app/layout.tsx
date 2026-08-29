@@ -6,8 +6,22 @@ import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "renewly",
-  description: "personal renewal radar - never forget an auto-renewal again.",
+  description: "Track every contract's real cancellation deadline, not just its renewal date.",
+
+  appleWebApp: {
+    title: "renewly | know your cancellation deadlines",
+  },
+
+  openGraph: {
+    title: "renewly | stop missing cancellation windows",
+    description: "Renewly tracks the real deadline behind every contract's notice period, so auto-renewals never catch your team off guard.",
+    url: "https://therenewly.vercel.app/",
+    siteName: "renewly",
+    locale: "en_GB",
+    type: "website",
+  },
 };
+
 
 export default function RootLayout({
   children,
