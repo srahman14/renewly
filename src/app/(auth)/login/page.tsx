@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { redirect, useRouter, useSearchParams } from 'next/navigation'
 import { Mail } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import type { FormEvent } from 'react'
 import { AuthBrandPanel } from '@/components/renewly/auth-brand-panel'
 import { Logo } from '@/components/renewly/logo'
@@ -11,13 +11,15 @@ import { PasswordField, TextField } from '@/components/renewly/form-field'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/lib/stores/auth.store'
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
   const signIn = useAuthStore((state) => state.signIn)
 
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
-
+  // For when user is invited and they click login will be redirected to invite page
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect");
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setFormError(null)
@@ -25,10 +27,6 @@ export default function LoginPage() {
     const formData = new FormData(event.currentTarget)
     const email = String(formData.get('email') ?? '').trim()
     const password = String(formData.get('password') ?? '')
-    
-    // For when user is invited and they click login will be redirected to invite page
-    const searchParams = useSearchParams();
-    const redirectTo = searchParams.get("redirect");
 
     setSubmitting(true)
     const result = await signIn(email, password)
@@ -123,5 +121,13 @@ export default function LoginPage() {
 
       <AuthBrandPanel />
     </main>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   )
 }
