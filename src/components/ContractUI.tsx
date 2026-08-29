@@ -19,27 +19,10 @@ import {
   isMuted,
 } from "@/lib/contracts";
 
-// Continuous green → amber → red urgency scale, computed per exact day
-// count rather than a handful of fixed buckets — so two different day
-// counts essentially never land on the same shade within the runway
-// that matters (0 to SOON_BUFFER_DAYS days left), instead of everything
-// from 1 to 14 days sharing one flat amber tint. Past that runway there's
-// nothing left to grade against, so it settles into a calm, constant
-// green — this is a computed gradient rather than Tailwind utility
-// classes because there's no way to express "one shade per integer day"
-// as a fixed set of class names.
 function urgencyGradient(days: number) {
-  const t = Math.max(0, Math.min(1, 1 - days / SOON_BUFFER_DAYS)); // 0 = far off, 1 = imminent
+  const t = Math.max(0, Math.min(1, 1 - days / SOON_BUFFER_DAYS));
 
-  // Two-segment hue sweep: green (142°) → amber (38°) for the first half
-  // of the runway, then amber → red (0°) for the half closest to the
-  // deadline — "sort of red" right at the end, not the whole back half.
   const hue = t <= 0.5 ? 142 - (142 - 38) * (t / 0.5) : 38 - 38 * ((t - 0.5) / 0.5);
-  // Kept deliberately light/pastel across the whole range, not just the
-  // far end — lightness only drifts from 90% down to 72%, so even "1 day
-  // left" stays a soft tint rather than a solid, bold fill. Text stays a
-  // darker version of the same hue throughout; never switches to white,
-  // since the background never gets dark enough to need it.
   const saturation = 45 + t * 20;
   const lightness = 90 - t * 18;
 
@@ -50,21 +33,10 @@ function urgencyGradient(days: number) {
   };
 }
 
-// Shows days until the cancellation deadline (renewal date minus notice
-// period) — not days until the renewal charge itself. Negative means
-// you're already past the point where you could've given notice for this
-// cycle. Deliberately NOT called "overdue" — nothing is late or unpaid,
-// you've just missed the notice window, so the wording says exactly that
-// instead of implying a missed charge.
 export function DeadlinePill({ contract }: { contract: Contract }) {
   const level = urgencyFromContract(contract);
   const label = deadlineLabel(contract);
 
-  // "Critical" (already past the deadline, locked in for this cycle) is
-  // deliberately NOT part of the green→red gradient — it's a different
-  // kind of state (nothing left to count down, not "getting worse"), so
-  // it keeps its own fixed navy treatment rather than reading as "more
-  // red than red."
   if (level === "critical") {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-[4px] border border-navy bg-navy px-2.5 py-1 font-mono text-[11px] text-amber-light">
@@ -86,12 +58,6 @@ export function DeadlinePill({ contract }: { contract: Contract }) {
   );
 }
 
-// Second, separate countdown — this one tracks the actual renewal/charge
-// date, not the cancellation deadline. Deliberately only appears in the
-// last-day window (renews today or tomorrow) so it reads as a final
-// warning rather than competing with DeadlinePill for attention every day.
-// Solid + bell + pulse, so it's unmistakably a different signal from the
-// cancellation-deadline pill next to it.
 export function RenewalWarningBadge({ contract }: { contract: Contract }) {
   if (contract.status === "cancelled") return null;
 
@@ -112,8 +78,6 @@ export function RenewalWarningBadge({ contract }: { contract: Contract }) {
   );
 }
 
-// Colour now reflects the computed urgency, not a manually-stored
-// "flagged" status — so it always matches what DeadlinePill is showing.
 export function StatusDot({ contract }: { contract: Contract }) {
   const color =
     contract.status === "cancelled"
@@ -128,8 +92,8 @@ export function StatusDot({ contract }: { contract: Contract }) {
 // Always-visible mute toggle — sits next to the contract name so muted
 // state is scannable in the list, and clicking it directly toggles the
 // state without going through the row menu. `disabled` gates this to
-// owners only (see contracts/page.tsx) — non-owners see the icon but
-// can't act on it, matching the RLS restriction on the underlying write.
+// owners/admins only (see contracts/page.tsx) — non-managers see the icon
+// but can't act on it, matching the RLS restriction on the underlying write.
 export function MuteIndicator({
   contract,
   onToggle,
@@ -153,7 +117,7 @@ export function MuteIndicator({
       aria-label={muted ? "Unmute notifications" : "Mute notifications"}
       title={
         disabled
-          ? "Only owners can change notification settings"
+          ? "Only owners and admins can change notification settings"
           : muted
             ? "Unmute notifications"
             : "Mute notifications"
@@ -168,11 +132,6 @@ export function MuteIndicator({
   );
 }
 
-// Lightweight, auto-dismissing confirmation shown after mute/unmute — not
-// a blocking dialog, since muting is low-stakes and instantly reversible
-// (unlike DeleteConfirmDialog, which guards a permanent action). Sits in
-// the bottom corner so it doesn't interrupt whatever the person was doing
-// on the page. Shared here so Dashboard and Renewals show the same toast.
 export function MuteToast({
   message,
   onDismiss,
@@ -210,11 +169,6 @@ export function CategoryBadge({ category }: { category: string }) {
   );
 }
 
-// A permanent delete was previously one click inside a dropdown menu, with
-// no confirmation and no undo — a real data-loss risk for something as
-// consequential as a tracked contract. Shared here (not duplicated per
-// page) so both the dashboard preview and the full contracts list confirm
-// the same way.
 export function DeleteConfirmDialog({
   contractName,
   onConfirm,
@@ -263,23 +217,25 @@ export function DeleteConfirmDialog({
 }
 
 // "⋯" row menu: View details / Edit / Cancel (soft — sets status to
-// cancelled) / Delete permanently (hard delete). Non-owners only ever
-// see "View details" — the rest are write actions RLS will reject
-// server-side anyway, so there's no point showing them.
+// cancelled) / Delete permanently (hard delete). Members-only-view users
+// only ever see "View details" — the rest are write actions RLS will
+// reject server-side anyway (owners and admins can manage contracts, per
+// permissions.ts's manageContracts capability), so there's no point
+// showing them to anyone below that.
 export function ActionsMenu({
   onViewDetails,
   onEdit,
   onCancel,
   onDeletePermanently,
   isCancelled,
-  isOwner,
+  canManage,
 }: {
   onViewDetails: () => void;
   onEdit: () => void;
   onCancel: () => void;
   onDeletePermanently: () => void;
   isCancelled: boolean;
-  isOwner: boolean;
+  canManage: boolean;
 }) {
   return (
     <DropdownMenu>
@@ -291,11 +247,11 @@ export function ActionsMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={onViewDetails}>View details</DropdownMenuItem>
-        {isOwner && <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>}
-        {isOwner && !isCancelled && (
+        {canManage && <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>}
+        {canManage && !isCancelled && (
           <DropdownMenuItem onClick={onCancel}>Cancel</DropdownMenuItem>
         )}
-        {isOwner && (
+        {canManage && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onDeletePermanently} className="text-red-500">

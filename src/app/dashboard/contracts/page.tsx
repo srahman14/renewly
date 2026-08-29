@@ -48,6 +48,7 @@ import {
   useOrgMembersQuery,
   useCurrentMemberRoleQuery,
 } from "@/lib/queries/org.queries";
+import { can } from "@/lib/permissions";
 
 type StatusTabKey = "active" | "flagged" | "cancelled";
 
@@ -87,7 +88,7 @@ export default function AllContractsPage() {
     [orgMembers]
   );
   const { data: memberRole } = useCurrentMemberRoleQuery(orgId, userId);
-  const isOwner = memberRole === "owner";
+  const canManage = can(memberRole, "manageContracts");
 
   const [showForm, setShowForm] = useState(false);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
@@ -240,7 +241,7 @@ export default function AllContractsPage() {
             </p>
           </div>
 
-          {isOwner && (
+          {canManage && (
             <button
               onClick={() => setShowForm(true)}
               className="inline-block self-start rounded-[4px] bg-amber px-5 py-2.5 font-body text-[15px] font-medium text-ink transition-colors hover:bg-amber-light"
@@ -380,7 +381,7 @@ export default function AllContractsPage() {
                                   <MuteIndicator
                                     contract={contract}
                                     onToggle={() => toggleMute(contract)}
-                                    disabled={!isOwner}
+                                    disabled={!canManage}
                                   />
                                 </p>
                                 <p className="text-sm text-ink/50">
@@ -428,7 +429,7 @@ export default function AllContractsPage() {
 
                             <ActionsMenu
                               isCancelled={cancelled}
-                              isOwner={isOwner}
+                              canManage={canManage}
                               onViewDetails={() => setViewingContract(contract)}
                               onEdit={() => {
                                 setEditingContract(contract);
@@ -476,7 +477,7 @@ export default function AllContractsPage() {
                   Add your first subscription to start tracking renewals and
                   cancellation deadlines.
                 </p>
-                {isOwner && (
+                {canManage && (
                   <button
                     onClick={() => setShowForm(true)}
                     className="mt-6 rounded-[4px] bg-ink px-5 py-3 font-body text-sm font-medium text-paper hover:bg-navy"

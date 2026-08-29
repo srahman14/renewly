@@ -30,6 +30,7 @@ import {
   useOrgMembersQuery,
   useCurrentMemberRoleQuery,
 } from "@/lib/queries/org.queries";
+import { can } from "@/lib/permissions";
 
 // This page is deliberately narrower in scope than /dashboard/contracts —
 // it's not a full list view, it's an action queue. Only two states show
@@ -55,7 +56,7 @@ export default function RenewalsPage() {
     [orgMembers]
   );
   const { data: memberRole } = useCurrentMemberRoleQuery(orgId, userId);
-  const isOwner = memberRole === "owner";
+  const canManage = can(memberRole, "manageContracts");
 
   const [showForm, setShowForm] = useState(false);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
@@ -278,7 +279,7 @@ export default function RenewalsPage() {
               Fast-track renewal
               <ArrowUpRight className="h-3.5 w-3.5" />
             </a>
-          ) : isOwner ? (
+          ) : canManage ? (
             <div className="flex items-center justify-between gap-3 rounded-[4px] border border-dashed border-line px-3 py-2.5">
               <p className="font-body text-[13px] text-ink/45">No management link saved.</p>
               <button

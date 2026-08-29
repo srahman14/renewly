@@ -98,10 +98,10 @@ const alertsNav: NavItem = {
 
 const orgNav = [
   { title: "Members", url: "/dashboard/org/members", icon: Users },
-  { title: "Roles & Permissions", url: "/org/roles", icon: ShieldCheck },
+  { title: "Roles & Permissions", url: "/dashboard/org/roles", icon: ShieldCheck },
   {
     title: "Organization Settings",
-    url: "/dashbaord/settings",
+    url: "/dashboard/settings",
     icon: Building2,
   },
   { title: "Integrations", url: "/org/integrations", icon: Plug },

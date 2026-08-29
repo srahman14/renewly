@@ -21,7 +21,7 @@ import type { InviteRole } from "@/lib/services/invite.service";
 
 const ROLE_LABELS: Record<InviteRole, string> = {
   member: "Member",
-  owner: "Owner",
+  admin: "Admin",
 };
 
 export function InviteMemberForm() {

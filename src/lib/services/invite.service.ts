@@ -1,6 +1,6 @@
 import { createClient } from "../supabase/client";
 
-export type InviteRole = "owner" | "member";
+export type InviteRole = "admin" | "member";
 export type InviteStatus = "pending" | "accepted" | "revoked" | "expired";
 
 export interface Invite {

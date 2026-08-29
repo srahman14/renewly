@@ -13,6 +13,7 @@ import { CategoryBadge, DeadlinePill, RenewalWarningBadge } from "@/components/C
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { useUserProfileQuery } from "@/lib/queries/user.queries";
 import { useOrgMembersQuery, useCurrentMemberRoleQuery } from "@/lib/queries/org.queries";
+import { can } from "@/lib/permissions";
 
 export default function ContractDetailsDialog({
   contract,
@@ -37,7 +38,7 @@ export default function ContractDetailsDialog({
     .join(", ");
 
   const { data: memberRole } = useCurrentMemberRoleQuery(orgId, userId);
-  const isOwner = memberRole === "owner";
+  const canManage = can(memberRole, "manageContracts");
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -145,7 +146,7 @@ export default function ContractDetailsDialog({
           >
             Close
           </button>
-          {isOwner && (
+          {canManage && (
             <button
               type="button"
               onClick={onEdit}

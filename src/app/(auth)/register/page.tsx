@@ -33,9 +33,13 @@ function RegisterForm() {
   const [accountType, setAccountType] = useState<AccountType>('individual')
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [needsConfirmation, setNeedsConfirmation] = useState(false)
+  const [submittedEmail, setSubmittedEmail] = useState('')
+
   // For when user is invited and they click login will be redirected to invite page
-  const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect");
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect')
+  const inviteEmail = searchParams.get('email')
   const copy = COPY[accountType]
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -47,7 +51,7 @@ function RegisterForm() {
     const email = String(formData.get('email') ?? '').trim()
     const password = String(formData.get('password') ?? '')
     const companyName = String(formData.get('company') ?? '').trim()
-    
+
     if (accountType === 'team' && !companyName) {
       setFormError('Company name is required for a team workspace.')
       return
@@ -60,6 +64,7 @@ function RegisterForm() {
       fullName,
       accountType,
       companyName: accountType === 'team' ? companyName : undefined,
+      redirectTo,
     })
     setSubmitting(false)
 
@@ -68,7 +73,58 @@ function RegisterForm() {
       return
     }
 
-   router.push(redirectTo ?? '/onboarding')
+    if (result.needsEmailConfirmation) {
+      setSubmittedEmail(email)
+      setNeedsConfirmation(true)
+      return
+    }
+
+    router.push(redirectTo ?? '/onboarding')
+  }
+
+  if (needsConfirmation) {
+    return (
+      <main className="grid min-h-dvh grid-cols-1 bg-paper text-ink lg:grid-cols-2 dark:bg-ink dark:text-paper">
+        <section className="flex flex-col px-6 py-10 sm:px-10 lg:px-16">
+          <div className="lg:hidden">
+            <Logo wordmarkClassName="text-ink dark:text-paper" />
+          </div>
+
+          <div className="flex flex-1 items-center justify-center">
+            <div className="w-full max-w-sm py-10 text-center">
+              <p className="font-mono text-xs uppercase tracking-[0.2em] text-teal dark:text-teal-light">
+                Almost there
+              </p>
+              <h1 className="mt-3 text-balance font-display text-3xl font-semibold tracking-tight">
+                Check your email
+              </h1>
+              <p className="mt-2 text-sm leading-relaxed text-ink/60 dark:text-paper/60">
+                We sent a confirmation link to <strong>{submittedEmail}</strong>.
+                {redirectTo?.startsWith('/invite/')
+                  ? ' Click it to finish joining the workspace.'
+                  : ' Click it to finish setting up your account.'}
+              </p>
+              <p className="mt-6 text-sm text-ink/60 dark:text-paper/60">
+                Wrong email or didn&apos;t get it?{' '}
+                <button
+                  type="button"
+                  onClick={() => setNeedsConfirmation(false)}
+                  className="font-medium text-teal underline-offset-4 hover:underline dark:text-teal-light"
+                >
+                  Try again
+                </button>
+              </p>
+            </div>
+          </div>
+
+          <p className="text-center text-xs text-ink/40 dark:text-paper/40 lg:text-left">
+            {'\u00A9'} {new Date().getFullYear()} Renewly. All rights reserved.
+          </p>
+        </section>
+
+        <AuthBrandPanel />
+      </main>
+    )
   }
 
   return (
@@ -145,8 +201,9 @@ function RegisterForm() {
                 placeholder="you@company.com"
                 required
                 icon={<Mail className="size-4" />}
+                defaultValue={inviteEmail ?? undefined}
+                disabled={!!inviteEmail}
               />
-
               {accountType === 'team' && (
                 <TextField
                   label="Company"

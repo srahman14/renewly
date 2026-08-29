@@ -10,11 +10,18 @@ interface SignUpParams {
   fullName: string
   accountType: AccountType
   companyName?: string
+  // Where to send the user after they click the email confirmation link —
+  // e.g. "/invite/abc123" when they signed up from an invite. Falls back
+  // to "/onboarding" for a normal signup.
+  redirectTo?: string | null
 }
 
 interface AuthResult {
   success: boolean
   error?: string
+  // True when signUp() succeeded but Supabase requires email confirmation
+  // before a session exists. The caller must NOT treat this as "logged in".
+  needsEmailConfirmation?: boolean
 }
 
 interface AuthState {
@@ -38,9 +45,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   isInitialized: false,
   error: null,
 
-  signUp: async ({ email, password, fullName, accountType, companyName }) => {
+  signUp: async ({ email, password, fullName, accountType, companyName, redirectTo }) => {
     set({ isLoading: true, error: null })
     const supabase = createClient()
+
+    const next = redirectTo ?? '/onboarding'
 
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -53,12 +62,27 @@ export const useAuthStore = create<AuthState>((set) => ({
           // rather than an empty string, so it's easy to check downstream.
           company_name: accountType === 'team' ? companyName ?? null : null,
         },
+        // Tells the confirmation email where to send the user back to.
+        // Must be added to Supabase → Auth → URL Configuration → Redirect
+        // URLs, or Supabase silently ignores it and falls back to Site URL.
+        emailRedirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(next)}`,
       },
     })
 
     if (error) {
       set({ isLoading: false, error: error.message })
       return { success: false, error: error.message }
+    }
+
+    // When "Confirm email" is enabled, signUp() returns a user but
+    // data.session is null — nobody is actually authenticated yet, no
+    // cookies get set. Previously this code set `user` in the store
+    // anyway, which made the UI believe someone was signed in when any
+    // follow-up request (e.g. accepting an invite) would actually run
+    // unauthenticated.
+    if (!data.session) {
+      set({ isLoading: false })
+      return { success: true, needsEmailConfirmation: true }
     }
 
     set({ user: data.user, session: data.session, isLoading: false })

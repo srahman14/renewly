@@ -1,18 +1,16 @@
 "use client";
 
-import { UserPlus, Mail, X } from "lucide-react";
+import { UserPlus, Mail } from "lucide-react";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { useUserProfileQuery } from "@/lib/queries/user.queries";
 import { useOrgQuery, useOrgMembersQuery } from "@/lib/queries/org.queries";
-import {
-  useInvitesQuery,
-  useRevokeInviteMutation,
-} from "@/lib/queries/invite.queries";
+import { useInvitesQuery } from "@/lib/queries/invite.queries";
 import { OrgMembersList } from "@/components/OrgMembersList";
 import { InviteMemberForm } from "@/components/InviteMemberForm";
 import { SectionCard } from "@/components/SectionCard";
 import { StatCard } from "@/components/StatCard";
 import { formatRelativeTime } from "@/lib/utils/time";
+import { can } from "@/lib/permissions";
 
 export default function OrgMembersPage() {
   const userId = useAuthStore((state) => state.user?.id ?? null);
@@ -24,11 +22,16 @@ export default function OrgMembersPage() {
   const { data: invites = [] } = useInvitesQuery(orgId);
 
   const currentMember = members.find((m) => m.userId === userId);
-  const isOwner = currentMember?.role === "owner";
+  // inviteMembers is an owner+admin capability (see permissions.ts) — this
+  // used to be a literal `=== "owner"` check, which hid the invite form
+  // from admins even though they're allowed to invite. can() is the same
+  // helper the rest of the app uses for this capability, so this page
+  // stays consistent with contracts/renewals/dashboard.
+  const canInvite = can(currentMember?.role ?? null, "inviteMembers");
 
   const owners = members.filter((m) => m.role === "owner").length;
+  const admins = members.filter((m) => m.role === "admin").length;
   const pendingInvites = invites.filter((i) => i.status === "pending");
-  const revokeInviteMutation = useRevokeInviteMutation(orgId);
 
   // Real events, not mocked — every member join and invite sent, merged
   // and sorted. There's no dedicated activity_log table yet, so this is
@@ -70,9 +73,10 @@ export default function OrgMembersPage() {
         </div>
       </div>
 
-      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         <StatCard label="Members" value={members.length} />
         <StatCard label="Owners" value={owners} />
+        <StatCard label="Admins" value={admins} />
         <StatCard label="Pending invites" value={pendingInvites.length} />
         <StatCard
           label="Created"
@@ -93,6 +97,10 @@ export default function OrgMembersPage() {
             title="Members"
             description="Everyone with access to this workspace."
           >
+            {/* OrgMembersList now renders pending invites itself (sorted
+                Owner -> Admin -> Member -> Pending, revoke gated on
+                inviteMembers), so they're no longer duplicated in the
+                sidebar below. */}
             <OrgMembersList
               orgId={orgId}
               currentUserId={userId}
@@ -133,7 +141,7 @@ export default function OrgMembersPage() {
         </div>
 
         <div className="flex flex-col gap-8">
-          {isOwner && (
+          {canInvite && (
             <SectionCard
               title="Invite someone"
               description="They'll get a link to join."
@@ -141,31 +149,6 @@ export default function OrgMembersPage() {
               <InviteMemberForm />
             </SectionCard>
           )}
-
-          <ul className="-mx-5 divide-y divide-line">
-            {pendingInvites.map((invite) => (
-              <li
-                key={invite.id}
-                className="flex items-center justify-between px-5 py-3"
-              >
-                <div>
-                  <p className="font-body text-sm text-ink">{invite.email}</p>
-                  <p className="mt-0.5 font-mono text-xs text-ink/40">
-                    {invite.role} · expires{" "}
-                    {new Date(invite.expiresAt).toLocaleDateString()}
-                  </p>
-                </div>
-                <button
-                  onClick={() => revokeInviteMutation.mutate(invite.id)}
-                  disabled={revokeInviteMutation.isPending}
-                  className="rounded-md p-1.5 text-ink/40 transition hover:bg-paper hover:text-red-600 disabled:opacity-40"
-                  aria-label={`Revoke invite for ${invite.email}`}
-                >
-                  <X className="size-4" />
-                </button>
-              </li>
-            ))}
-          </ul>
         </div>
       </div>
     </div>
