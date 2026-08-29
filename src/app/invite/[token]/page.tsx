@@ -79,7 +79,7 @@ export default function InvitePage({
         <InviteHeader orgInitials={orgInitials} preview={preview} />
         <div className="mt-6 flex flex-col gap-2">
           <Link
-            href={`/signup?redirect=/invite/${token}`}
+            href={`/register?redirect=/invite/${token}`}
             className="w-full rounded-md bg-navy px-4 py-2.5 text-center font-body text-sm font-medium text-paper transition hover:bg-navy/90"
           >
             Create an account to accept
