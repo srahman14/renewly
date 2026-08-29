@@ -15,7 +15,6 @@ interface MemberRow {
   created_at: string;
 }
 
-// org.service.ts — add to existing file
 export interface Org {
   id: string;
   name: string;
@@ -120,4 +119,21 @@ export async function removeMember(orgId: string, userId: string): Promise<void>
     .eq("user_id", userId);
 
   if (error) throw error;
+}
+
+// Used to gate write actions (create/edit/delete contracts, mute
+// toggle) client-side. RLS is the real boundary — this is just so the
+// UI doesn't show controls that would fail server-side for non-owners.
+export async function fetchMemberRole(orgId: string, userId: string): Promise<MemberRole> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("org_members")
+    .select("role")
+    .eq("org_id", orgId)
+    .eq("user_id", userId)
+    .single();
+
+  if (error) throw error;
+  return data.role as MemberRole;
 }

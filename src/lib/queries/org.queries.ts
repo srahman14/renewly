@@ -6,12 +6,14 @@ import {
   type MemberRole,
   type OrgMember,
   fetchOrg,
+  fetchMemberRole,
 } from "@/lib/services/org.service";
 
-// org.queries.ts — add to existing file
 export const orgKeys = {
   members: (orgId: string | null) => ["org-members", orgId] as const,
-  detail: (orgId: string | null) => ["org", orgId] as const, // extend the existing key factory
+  detail: (orgId: string | null) => ["org", orgId] as const,
+  memberRole: (orgId: string | null, userId: string | null) =>
+    ["org-member-role", orgId, userId] as const,
 };
 
 export function useOrgQuery(orgId: string | null) {
@@ -36,6 +38,22 @@ export function useOrgMembersQuery(orgId: string | null) {
     },
 
     enabled: !!orgId,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+// Current user's role in their org — used to gate write actions
+// client-side (RLS enforces the real boundary server-side).
+export function useCurrentMemberRoleQuery(orgId: string | null, userId: string | null) {
+  return useQuery({
+    queryKey: orgKeys.memberRole(orgId, userId),
+
+    queryFn: () => {
+      if (!orgId || !userId) throw new Error("Org ID and user ID are required");
+      return fetchMemberRole(orgId, userId);
+    },
+
+    enabled: !!orgId && !!userId,
     staleTime: 1000 * 60 * 5,
   });
 }

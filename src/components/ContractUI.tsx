@@ -127,16 +127,17 @@ export function StatusDot({ contract }: { contract: Contract }) {
 
 // Always-visible mute toggle — sits next to the contract name so muted
 // state is scannable in the list, and clicking it directly toggles the
-// state without going through the row menu (a menu item for this stopped
-// making sense once the icon itself became the obvious click target).
-// Deliberately doesn't touch the row's opacity/layout otherwise; muted
-// just means "don't notify me," not "this row matters less."
+// state without going through the row menu. `disabled` gates this to
+// owners only (see contracts/page.tsx) — non-owners see the icon but
+// can't act on it, matching the RLS restriction on the underlying write.
 export function MuteIndicator({
   contract,
   onToggle,
+  disabled = false,
 }: {
   contract: Contract;
   onToggle: () => void;
+  disabled?: boolean;
 }) {
   const muted = isMuted(contract);
 
@@ -145,11 +146,18 @@ export function MuteIndicator({
       type="button"
       onClick={(e) => {
         e.stopPropagation();
-        onToggle();
+        if (!disabled) onToggle();
       }}
-      className="rounded-[3px] p-0.5 transition-colors hover:bg-ink/5"
+      disabled={disabled}
+      className="rounded-[3px] p-0.5 transition-colors hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
       aria-label={muted ? "Unmute notifications" : "Mute notifications"}
-      title={muted ? "Unmute notifications" : "Mute notifications"}
+      title={
+        disabled
+          ? "Only owners can change notification settings"
+          : muted
+            ? "Unmute notifications"
+            : "Mute notifications"
+      }
     >
       {muted ? (
         <BellOff className="h-3.5 w-3.5 text-ink/35" />
@@ -255,19 +263,23 @@ export function DeleteConfirmDialog({
 }
 
 // "⋯" row menu: View details / Edit / Cancel (soft — sets status to
-// cancelled) / Delete permanently (hard delete)
+// cancelled) / Delete permanently (hard delete). Non-owners only ever
+// see "View details" — the rest are write actions RLS will reject
+// server-side anyway, so there's no point showing them.
 export function ActionsMenu({
   onViewDetails,
   onEdit,
   onCancel,
   onDeletePermanently,
   isCancelled,
+  isOwner,
 }: {
   onViewDetails: () => void;
   onEdit: () => void;
   onCancel: () => void;
   onDeletePermanently: () => void;
   isCancelled: boolean;
+  isOwner: boolean;
 }) {
   return (
     <DropdownMenu>
@@ -279,14 +291,18 @@ export function ActionsMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={onViewDetails}>View details</DropdownMenuItem>
-        <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>
-        {!isCancelled && (
+        {isOwner && <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>}
+        {isOwner && !isCancelled && (
           <DropdownMenuItem onClick={onCancel}>Cancel</DropdownMenuItem>
         )}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onDeletePermanently} className="text-red-500">
-          Delete permanently
-        </DropdownMenuItem>
+        {isOwner && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onDeletePermanently} className="text-red-500">
+              Delete permanently
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

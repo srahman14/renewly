@@ -121,7 +121,7 @@ export async function updateContract(input: UpdateContractInput): Promise<Contra
   const payload: Record<string, unknown> = {};
   if (rest.company !== undefined) payload.company = rest.company;
   if (rest.name !== undefined) payload.name = rest.name;
-  if (rest.owner_ids !== undefined) payload.owner = rest.owner_ids;
+  if (rest.owner_ids !== undefined) payload.owner_ids = rest.owner_ids;
   if (rest.team !== undefined) payload.team = rest.team;
   if (rest.monthlySpend !== undefined) payload.monthly_spend = rest.monthlySpend;
   if (rest.cycle !== undefined) payload.cycle = rest.cycle;

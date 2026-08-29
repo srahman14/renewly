@@ -26,6 +26,10 @@ import {
   useCreateContractMutation,
   useUpdateContractMutation,
 } from "@/lib/queries/contract.queries";
+import {
+  useOrgMembersQuery,
+  useCurrentMemberRoleQuery,
+} from "@/lib/queries/org.queries";
 
 // This page is deliberately narrower in scope than /dashboard/contracts —
 // it's not a full list view, it's an action queue. Only two states show
@@ -42,14 +46,22 @@ export default function RenewalsPage() {
   const createContractMutation = useCreateContractMutation(orgId);
   const updateContractMutation = useUpdateContractMutation(orgId);
 
+  // Owner names for display, and current role for gating the edit affordance.
+  // RLS enforces the real boundary server-side — this just keeps the UI
+  // from showing controls that would fail anyway.
+  const { data: orgMembers = [] } = useOrgMembersQuery(orgId);
+  const nameByUserId = useMemo(
+    () => new Map(orgMembers.map((m) => [m.userId, m.fullName])),
+    [orgMembers]
+  );
+  const { data: memberRole } = useCurrentMemberRoleQuery(orgId, userId);
+  const isOwner = memberRole === "owner";
+
   const [showForm, setShowForm] = useState(false);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [viewingContract, setViewingContract] = useState<Contract | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  // Real mutation state, not a local guess — the form's Save button and
-  // "Saving..." label read directly from this, so they can't desync from
-  // what's actually happening on the network.
   const isSaving =
     createContractMutation.isPending || updateContractMutation.isPending;
 
@@ -159,6 +171,10 @@ export default function RenewalsPage() {
   }
 
   function RenewalCard({ contract, tone }: { contract: Contract; tone: "critical" | "soon" }) {
+    const ownerNames = contract.ownerIds
+      .map((id) => nameByUserId.get(id) ?? "Unknown")
+      .join(", ");
+
     // Soon: progress toward the deadline opening (fills as it approaches).
     // Critical: progress toward the actual renewal charge firing (fills as
     // the charge gets closer), since the deadline itself has already
@@ -193,7 +209,7 @@ export default function RenewalsPage() {
       >
         <div className="flex items-center justify-between px-5 pt-5">
           <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink/40">
-            {contract.ownerIds}
+            {ownerNames || "—"}
             {contract.team && ` · ${contract.team}`}
           </span>
           <CategoryBadge category={contract.category} />
@@ -262,7 +278,7 @@ export default function RenewalsPage() {
               Fast-track renewal
               <ArrowUpRight className="h-3.5 w-3.5" />
             </a>
-          ) : (
+          ) : isOwner ? (
             <div className="flex items-center justify-between gap-3 rounded-[4px] border border-dashed border-line px-3 py-2.5">
               <p className="font-body text-[13px] text-ink/45">No management link saved.</p>
               <button
@@ -276,6 +292,10 @@ export default function RenewalsPage() {
               >
                 Add one →
               </button>
+            </div>
+          ) : (
+            <div className="rounded-[4px] border border-dashed border-line px-3 py-2.5">
+              <p className="font-body text-[13px] text-ink/45">No management link saved.</p>
             </div>
           )}
         </div>

@@ -36,9 +36,11 @@ import {
   useUpdateContractMutation,
   useDeleteContractMutation,
 } from "@/lib/queries/contract.queries";
+import {
+  useOrgMembersQuery,
+  useCurrentMemberRoleQuery,
+} from "@/lib/queries/org.queries";
 
-// How many rows show on the overview before sending people to /dashboard/contracts.
-// Full search/filter/sort now lives only on that page — this is a glance, not a workspace.
 const PREVIEW_COUNT = 4;
 
 export default function DashboardPage() {
@@ -51,48 +53,79 @@ export default function DashboardPage() {
   const updateContractMutation = useUpdateContractMutation(orgId);
   const deleteContractMutation = useDeleteContractMutation(orgId);
 
+  // Owner names for display, and current role for gating write actions.
+  // RLS enforces the real boundary server-side — this just keeps the UI
+  // from showing controls that would fail anyway.
+  const { data: orgMembers = [] } = useOrgMembersQuery(orgId);
+  const nameByUserId = useMemo(
+    () => new Map(orgMembers.map((m) => [m.userId, m.fullName])),
+    [orgMembers]
+  );
+  const { data: memberRole } = useCurrentMemberRoleQuery(orgId, userId);
+  const isOwner = memberRole === "owner";
+
   const [showForm, setShowForm] = useState(false);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [viewingContract, setViewingContract] = useState<Contract | null>(null);
   const [deletingContract, setDeletingContract] = useState<Contract | null>(null);
   const [muteToast, setMuteToast] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const isSaving =
+    createContractMutation.isPending || updateContractMutation.isPending;
 
   function saveContract(contract: Contract) {
     const exists = contracts.some((item) => item.id === contract.id);
+    setSaveError(null);
 
     if (exists) {
-      updateContractMutation.mutate({
-        id: contract.id,
-        company: contract.company,
-        name: contract.name,
-        owner_ids: contract.ownerIds,
-        team: contract.team,
-        monthlySpend: contract.monthlySpend,
-        cycle: contract.cycle,
-        renewsOn: contract.renewsOn,
-        noticeDays: contract.noticeDays,
-        url: contract.url,
-        category: contract.category,
-      });
+      updateContractMutation.mutate(
+        {
+          id: contract.id,
+          company: contract.company,
+          name: contract.name,
+          owner_ids: contract.ownerIds,
+          team: contract.team,
+          monthlySpend: contract.monthlySpend,
+          cycle: contract.cycle,
+          renewsOn: contract.renewsOn,
+          noticeDays: contract.noticeDays,
+          url: contract.url,
+          category: contract.category,
+        },
+        {
+          onSuccess: () => {
+            setShowForm(false);
+            setEditingContract(null);
+          },
+          onError: () => setSaveError("Couldn't save — please try again."),
+        }
+      );
     } else {
       if (!orgId) return;
-      createContractMutation.mutate({
-        orgId,
-        company: contract.company,
-        name: contract.name,
-        ownerIds: contract.ownerIds,
-        team: contract.team,
-        monthlySpend: contract.monthlySpend,
-        cycle: contract.cycle,
-        renewsOn: contract.renewsOn,
-        noticeDays: contract.noticeDays,
-        url: contract.url,
-        category: contract.category,
-      });
+      createContractMutation.mutate(
+        {
+          orgId,
+          company: contract.company,
+          name: contract.name,
+          ownerIds: contract.ownerIds,
+          team: contract.team,
+          monthlySpend: contract.monthlySpend,
+          cycle: contract.cycle,
+          renewsOn: contract.renewsOn,
+          noticeDays: contract.noticeDays,
+          url: contract.url,
+          category: contract.category,
+        },
+        {
+          onSuccess: () => {
+            setShowForm(false);
+            setEditingContract(null);
+          },
+          onError: () => setSaveError("Couldn't save — please try again."),
+        }
+      );
     }
-
-    setShowForm(false);
-    setEditingContract(null);
   }
 
   function cancelContract(id: string) {
@@ -154,6 +187,10 @@ export default function DashboardPage() {
   }
 
   function DeadlineCard({ contract }: { contract: Contract }) {
+    const ownerNames = contract.ownerIds
+      .map((id) => nameByUserId.get(id) ?? "Unknown")
+      .join(", ");
+
     return (
       <div className="rounded-md border border-ink/10 bg-white shadow-[0_20px_45px_-25px_rgba(18,20,28,0.35)]">
         <div className="flex items-center justify-between px-5 pt-4">
@@ -166,7 +203,7 @@ export default function DashboardPage() {
         <div className="px-5 pb-4 pt-2">
           <p className="font-display text-lg font-medium text-ink">{contract.company}</p>
           <p className="mt-1 font-body text-sm text-ink/50">{contract.name}</p>
-          <p className="mt-1 font-body text-sm text-ink/50">Owner: {contract.ownerIds}</p>
+          <p className="mt-1 font-body text-sm text-ink/50">Owner: {ownerNames || "—"}</p>
         </div>
 
         <div className="perforated-edge" />
@@ -192,7 +229,6 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-paper-muted">
       <main className="mx-auto max-w-7xl px-6 py-10 md:px-10 md:py-14">
-        {/* Header */}
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="font-mono text-[12px] uppercase tracking-[0.1em] text-ink/45">Overview</p>
@@ -208,15 +244,16 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <button
-            onClick={() => setShowForm(true)}
-            className="inline-block self-start rounded-[4px] bg-amber px-5 py-2.5 font-body text-[15px] font-medium text-ink transition-colors hover:bg-amber-light"
-          >
-            + Add contract
-          </button>
+          {isOwner && (
+            <button
+              onClick={() => setShowForm(true)}
+              className="inline-block self-start rounded-[4px] bg-amber px-5 py-2.5 font-body text-[15px] font-medium text-ink transition-colors hover:bg-amber-light"
+            >
+              + Add contract
+            </button>
+          )}
         </div>
 
-        {/* Stat cards */}
         <dl className="mt-10 grid grid-cols-1 gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
           <StatCard label="Tracked contracts" value={String(totals.count)} />
           <StatCard
@@ -245,16 +282,17 @@ export default function DashboardPage() {
               You don&apos;t have any contracts yet. Add your first subscription to start tracking
               renewals.
             </p>
-            <button
-              onClick={() => setShowForm(true)}
-              className="mt-6 rounded-[4px] bg-ink px-5 py-3 font-body text-sm font-medium text-paper hover:bg-navy"
-            >
-              Add your first contract
-            </button>
+            {isOwner && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="mt-6 rounded-[4px] bg-ink px-5 py-3 font-body text-sm font-medium text-paper hover:bg-navy"
+              >
+                Add your first contract
+              </button>
+            )}
           </div>
         ) : (
           <>
-            {/* Closest deadlines */}
             <section className="mt-14">
               <h2 className="font-display text-xl font-medium text-ink">Closest deadlines</h2>
 
@@ -265,7 +303,6 @@ export default function DashboardPage() {
               </div>
             </section>
 
-            {/* Contracts preview */}
             <section className="mt-14">
               <div className="flex items-center justify-between">
                 <Link
@@ -296,7 +333,11 @@ export default function DashboardPage() {
                         <div>
                           <p className="flex items-center gap-1.5 font-body font-medium text-ink">
                             {contract.company}
-                            <MuteIndicator contract={contract} onToggle={() => toggleMute(contract)} />
+                            <MuteIndicator
+                              contract={contract}
+                              onToggle={() => toggleMute(contract)}
+                              disabled={!isOwner}
+                            />
                           </p>
                           <p className="text-sm text-ink/50">{contract.name}</p>
                         </div>
@@ -318,6 +359,7 @@ export default function DashboardPage() {
 
                       <ActionsMenu
                         isCancelled={contract.status === "cancelled"}
+                        isOwner={isOwner}
                         onViewDetails={() => setViewingContract(contract)}
                         onEdit={() => {
                           setEditingContract(contract);
@@ -351,7 +393,10 @@ export default function DashboardPage() {
             onClose={() => {
               setShowForm(false);
               setEditingContract(null);
+              setSaveError(null);
             }}
+            isSaving={isSaving}
+            saveError={saveError}
           />
         )}
 

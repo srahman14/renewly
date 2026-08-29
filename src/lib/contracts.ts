@@ -100,6 +100,15 @@ export function getCategoryDotClass(category: string): string {
 export function currency(value: number) {
   return `£${value.toLocaleString("en-GB")}`;
 }
+export function resolveOwnerNames(
+  ownerIds: string[] | null | undefined,
+  members: { id: string; full_name?: string | null }[]
+): string {
+  if (!ownerIds || ownerIds.length === 0) return "Unassigned";
+  return ownerIds
+    .map((id) => members.find((m) => m.id === id)?.full_name ?? "Unknown")
+    .join(", ");
+}
 
 /* ------------------------------------------------------------------ */
 /* Notice-period validation                                            */

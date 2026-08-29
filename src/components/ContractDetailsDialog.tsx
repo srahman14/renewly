@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import {
   Contract,
   currency,
@@ -10,12 +10,10 @@ import {
   deadlineLabel,
 } from "@/lib/contracts";
 import { CategoryBadge, DeadlinePill, RenewalWarningBadge } from "@/components/ContractUI";
+import { useAuthStore } from "@/lib/stores/auth.store";
+import { useUserProfileQuery } from "@/lib/queries/user.queries";
+import { useOrgMembersQuery, useCurrentMemberRoleQuery } from "@/lib/queries/org.queries";
 
-// Self-contained overlay (no shadcn Dialog dependency assumed) — same
-// fixed-inset + backdrop pattern used elsewhere in the app. Reuses the
-// "Last safe cancel date" navy panel from the dashboard's DeadlineCard so
-// the same visual instrument shows up here too, just with the full set of
-// fields underneath instead of the trimmed preview version.
 export default function ContractDetailsDialog({
   contract,
   onClose,
@@ -25,6 +23,22 @@ export default function ContractDetailsDialog({
   onClose: () => void;
   onEdit: () => void;
 }) {
+  const userId = useAuthStore((state) => state.user?.id ?? null);
+  const { data: profile } = useUserProfileQuery(userId);
+  const orgId = profile?.org_id ?? null;
+
+  const { data: orgMembers = [] } = useOrgMembersQuery(orgId);
+  const nameByUserId = useMemo(
+    () => new Map(orgMembers.map((m) => [m.userId, m.fullName])),
+    [orgMembers]
+  );
+  const ownerNames = contract.ownerIds
+    .map((id) => nameByUserId.get(id) ?? "Unknown")
+    .join(", ");
+
+  const { data: memberRole } = useCurrentMemberRoleQuery(orgId, userId);
+  const isOwner = memberRole === "owner";
+
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -67,7 +81,7 @@ export default function ContractDetailsDialog({
           </p>
           <p className="mt-1 font-body text-sm text-ink/50">{contract.name}</p>
           <p className="mt-1 font-body text-sm text-ink/50">
-            Owner: {contract.ownerIds}
+            Owner: {ownerNames || "—"}
             {contract.team && <> · Team: {contract.team}</>}
           </p>
         </div>
@@ -131,13 +145,15 @@ export default function ContractDetailsDialog({
           >
             Close
           </button>
-          <button
-            type="button"
-            onClick={onEdit}
-            className="rounded-[4px] bg-ink px-4 py-2 font-body text-[14px] font-medium text-paper transition-colors hover:bg-navy"
-          >
-            Edit contract
-          </button>
+          {isOwner && (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="rounded-[4px] bg-ink px-4 py-2 font-body text-[14px] font-medium text-paper transition-colors hover:bg-navy"
+            >
+              Edit contract
+            </button>
+          )}
         </div>
       </div>
     </div>
