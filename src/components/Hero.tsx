@@ -1,101 +1,551 @@
+"use client";
+
+import { useLayoutEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ContractCard } from "../components/landing/ContractCard";
+
+gsap.registerPlugin(ScrollTrigger);
+
 export default function Hero() {
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia();
+
+      mm.add(
+        {
+          desktop: "(min-width: 768px)",
+          mobile: "(max-width: 767px)",
+          reduceMotion: "(prefers-reduced-motion: reduce)",
+        },
+        (context) => {
+          const { desktop, mobile, reduceMotion } = context.conditions!;
+
+          // =========================================
+          // REDUCED MOTION
+          // =========================================
+
+          if (reduceMotion) {
+            gsap.set("[data-hero='statement']", {
+              opacity: 1,
+              y: 0,
+            });
+
+            gsap.set("[data-hero='container']", {
+              opacity: 1,
+              scale: 1,
+            });
+
+            gsap.set("[data-hero='card']", {
+              opacity: 1,
+              x: 0,
+              y: 0,
+              scale: 1,
+            });
+
+            gsap.set("[data-hero='stage-copy']", {
+              opacity: 1,
+              x: 0,
+            });
+
+            return;
+          }
+
+          // =========================================
+          // DESKTOP
+          // =========================================
+
+          if (desktop) {
+            const tl = gsap.timeline({
+              scrollTrigger: {
+                trigger: sectionRef.current,
+
+                start: "top top",
+
+                /*
+                 * IMPORTANT
+                 *
+                 * We are deliberately ending the animation
+                 * before the very end of the Hero.
+                 *
+                 * This prevents the completed scene from
+                 * sitting there for another 1–2 seconds.
+                 */
+                end: "65% top",
+
+                scrub: 0.7,
+              },
+            });
+
+            // =========================================
+            // INITIAL STATES
+            // =========================================
+
+            gsap.set("[data-hero='statement']", {
+              opacity: 0,
+              y: 30,
+            });
+
+            gsap.set("[data-hero='container']", {
+              opacity: 0,
+              scale: 0.96,
+            });
+
+            gsap.set("[data-hero='card']", {
+              opacity: 0,
+              x: 0,
+              y: -500,
+              scale: 0.96,
+            });
+
+            gsap.set("[data-hero='stage-copy']", {
+              opacity: 0,
+              x: -35,
+            });
+
+            // =========================================
+            // 1. OPENING STATEMENT
+            // =========================================
+
+            tl.to("[data-hero='statement']", {
+              opacity: 1,
+              y: 0,
+              duration: 0.22,
+              ease: "power2.out",
+            });
+
+            // =========================================
+            // 2. BREATHING ROOM
+            // =========================================
+
+            tl.to(
+              {},
+              {
+                duration: 0.1,
+              },
+            );
+
+            // =========================================
+            // 3. GREEN CONTAINER
+            // =========================================
+
+            tl.to("[data-hero='container']", {
+              opacity: 1,
+              scale: 1,
+              duration: 0.16,
+              ease: "power3.out",
+            });
+
+            // =========================================
+            // 4. CARD FALL
+            // =========================================
+            //
+            // The card takes most of the animation time
+            // to travel down.
+            //
+            // This is what makes it feel deliberate rather
+            // than like it instantly appears.
+            // =========================================
+
+            tl.to("[data-hero='card']", {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              duration: 0.69,
+              ease: "power3.inOut",
+            });
+
+            // =========================================
+            // 5. CARD STARTS LANDING
+            // =========================================
+            //
+            // IMPORTANT:
+            //
+            // The text starts appearing BEFORE the card
+            // has completely finished its landing.
+            //
+            // This is the key change.
+            // =========================================
+
+            tl.to("[data-hero='card']", {
+              y: 14,
+              duration: 0.18,
+              ease: "power2.in",
+            });
+
+            // =========================================
+            // 6. CARD FINAL LAND + TEXT
+            // =========================================
+
+            /*
+             * Create a label at the beginning of the
+             * final landing movement.
+             */
+            tl.add("landing");
+
+            // Card finishes its landing.
+            tl.to(
+              "[data-hero='card']",
+              {
+                y: 0,
+                duration: 0.19,
+                ease: "power2.out",
+              },
+              "landing",
+            );
+
+            /*
+             * Text starts at EXACTLY the same time.
+             *
+             * Because both animations use the same
+             * "landing" label, they are synchronized.
+             */
+            tl.to(
+              "[data-hero='stage-copy']",
+              {
+                opacity: 1,
+                x: 0,
+                duration: 0.14,
+                ease: "power3.out",
+              },
+              "landing",
+            );
+
+            // =========================================
+            // 7. VERY SHORT HOLD
+            // =========================================
+            //
+            // The scene is now complete.
+            //
+            // Keep this extremely short so the Hero
+            // releases almost immediately.
+            // =========================================
+
+            tl.to(
+              {},
+              {
+                duration: 0.04,
+              },
+            );
+          }
+
+          // =========================================
+          // MOBILE
+          // =========================================
+
+          if (mobile) {
+            const tl = gsap.timeline({
+              scrollTrigger: {
+                trigger: sectionRef.current,
+                start: "top top",
+
+                /*
+                 * Mobile gets the same principle:
+                 * finish the animation relatively early.
+                 */
+                end: "60% top",
+
+                scrub: 0.8,
+              },
+            });
+
+            // =========================================
+            // INITIAL STATES
+            // =========================================
+
+            gsap.set("[data-hero='statement']", {
+              opacity: 0,
+              y: 20,
+            });
+
+            gsap.set("[data-hero='container']", {
+              opacity: 0,
+              scale: 0.97,
+            });
+
+            gsap.set("[data-hero='card']", {
+              opacity: 0,
+              y: -350,
+              scale: 0.92,
+            });
+
+            gsap.set("[data-hero='stage-copy']", {
+              opacity: 0,
+              y: 20,
+            });
+
+            // =========================================
+            // 1. STATEMENT
+            // =========================================
+
+            tl.to("[data-hero='statement']", {
+              opacity: 1,
+              y: 0,
+              duration: 0.2,
+              ease: "power2.out",
+            });
+
+            // =========================================
+            // 2. PAUSE
+            // =========================================
+
+            tl.to(
+              {},
+              {
+                duration: 0.1,
+              },
+            );
+
+            // =========================================
+            // 3. GREEN STAGE
+            // =========================================
+
+            tl.to("[data-hero='container']", {
+              opacity: 1,
+              scale: 1,
+              duration: 0.18,
+              ease: "power3.out",
+            });
+
+            // =========================================
+            // 4. CARD FALL
+            // =========================================
+
+            tl.to("[data-hero='card']", {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              duration: 0.58,
+              ease: "power3.inOut",
+            });
+
+            // =========================================
+            // 5. CARD LANDING
+            // =========================================
+
+            tl.to("[data-hero='card']", {
+              y: 8,
+              duration: 0.07,
+              ease: "power2.in",
+            });
+
+            // =========================================
+            // 6. CARD + TEXT TOGETHER
+            // =========================================
+
+            tl.add("mobileLanding");
+
+            tl.to(
+              "[data-hero='card']",
+              {
+                y: 0,
+                duration: 0.12,
+                ease: "power2.out",
+              },
+              "mobileLanding",
+            );
+
+            tl.to(
+              "[data-hero='stage-copy']",
+              {
+                opacity: 1,
+                y: 0,
+                duration: 0.12,
+                ease: "power3.out",
+              },
+              "mobileLanding",
+            );
+
+            // =========================================
+            // 7. SHORT HOLD
+            // =========================================
+
+            tl.to(
+              {},
+              {
+                duration: 0.04,
+              },
+            );
+          }
+        },
+      );
+
+      return () => mm.revert();
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <section id="top" className="py-8 md:py-40 bg-paper">
-      <div className="mx-auto grid max-w-content items-center gap-10 px-6 pb-16 pt-14 sm:gap-12 sm:pb-20 sm:pt-16 md:grid-cols-[1fr_0.9fr] md:gap-8 md:px-10 md:pb-24 md:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:pb-28">
-        {/* Left: thesis */}
-        <div>
-          <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-line bg-white/60 px-3 py-1 font-mono text-[12px] uppercase tracking-[0.08em] text-ink/60">
-            Renewal management for teams
+    <section ref={sectionRef} className="relative h-[3500px] w-full bg-paper">
+      {/*
+       * =========================================
+       * STICKY VIEWPORT
+       * =========================================
+       *
+       * The Hero remains in view while its parent
+       * section provides the scrolling space.
+       */}
+      <div className="sticky top-0 h-screen w-full overflow-hidden">
+        {/* =========================================
+            OPENING STATEMENT
+        ========================================= */}
+        <div
+          data-hero="statement"
+          className="
+          absolute
+          left-0
+          right-0
+          top-[15vh]
+          z-30
+          mx-auto
+          max-w-5xl
+          px-5
+          text-center
+          sm:px-8
+        "
+        >
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink/40 sm:text-[11px]">
+            Renewly
           </p>
 
-          <h1 className="max-w-xl font-display text-3xl font-medium leading-[1.12] tracking-tight text-ink sm:text-4xl md:text-4xl lg:text-5xl xl:text-[3.4rem] xl:leading-[1.08]">
-            The date that matters isn&apos;t your renewal date.
+          <h1
+            className="
+            mt-5
+            font-display
+            text-[clamp(2.7rem,7vw,6.75rem)]
+            font-medium
+            leading-[0.9]
+            tracking-[-0.055em]
+            text-ink
+          "
+          >
+            The date that matters
+            <br />
+            isn&apos;t your renewal date.
           </h1>
-
-          <p className="mt-6 max-w-lg font-body text-lg leading-relaxed text-ink/70">
-            It&apos;s the day before you lose the right to cancel. Renewly
-            reads the fine print on every contract your team pays for and
-            tells you the exact last-safe-cancel date — before the
-            auto-renewal fires.
-          </p>
-
-          <div id="hero-cta" className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <a
-              href="#how-it-works"
-              className="rounded-[4px] bg-[#12141C] px-6 py-3 text-center font-body text-[15px] font-medium text-[#F2F3F1] transition-colors hover:bg-navy"
-            >
-              Start tracking contracts
-            </a>
-            <a
-              href="#purpose"
-              className="rounded-[4px] border border-line px-6 py-3 text-center font-body text-[15px] font-medium text-ink transition-colors hover:border-ink"
-            >
-              Why Renewly exists
-            </a>
-          </div>
-
-          <p className="mt-5 font-mono text-[13px] text-ink/45">
-            No credit card. Two minutes to your first deadline.
-          </p>
         </div>
+        {/* =========================================
+    GREEN STAGE
+========================================= */}
+        <div
+          data-hero="container"
+          className="
+          absolute
+          bottom-0
+          left-1/2
+          z-10
+          h-[48vh]
+          w-[calc(100%-20px)]
+          -translate-x-1/2
+          overflow-visible
+          rounded-t-[32px]
+          bg-[#B8D7C3]
 
-        {/* Right: signature deadline card */}
-        <div className="relative mx-auto w-full max-w-[380px] sm:max-w-[420px] md:max-w-[320px] lg:max-w-[380px] xl:max-w-[420px]">
+          sm:w-[calc(100%-40px)]
+          sm:rounded-t-[44px]
+        "
+        >
+          {/* =========================================
+      LEFT TEXT
+  ========================================= */}
+
           <div
-            aria-hidden="true"
-            className="absolute -bottom-4 -right-4 h-full w-full rounded-md border border-line bg-paper-muted"
-          />
-          <div className="relative rounded-md border border-ink/10 bg-white shadow-[0_20px_45px_-25px_rgba(18,20,28,0.45)]">
-            <div className="flex items-center justify-between px-6 pt-5">
-              <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink/40">
-                Contract
-              </span>
-              <span className="rounded-full bg-teal/10 px-2 py-0.5 font-mono text-[11px] text-teal">
-                Tracked
-              </span>
-            </div>
+            data-hero="stage-copy"
+            className="
+            absolute
+            z-10
 
-            <div className="px-6 pb-5 pt-2">
-              <p className="font-display text-xl font-medium text-ink">
-                Figma — Enterprise
-              </p>
-              <p className="mt-1 font-body text-sm text-ink/50">
-                Owner: Priya · Design team
-              </p>
-            </div>
+            /*
+            * =====================================
+            * TEXT POSITION
+            * =====================================
+            *
+            * This has been moved slightly inward.
+            *
+            * Increase `left` → move text RIGHT
+            * Decrease `left` → move text LEFT
+            *
+            * The card has also been moved inward
+            * so the two elements feel like one
+            * composition.
+            */
+            left-8
+            top-1/2
 
-            <div className="perforated-edge" aria-hidden="true" />
+            max-w-[280px]
+            -translate-y-1/2
 
-            <div className="grid grid-cols-2 gap-px bg-line/70 px-0">
-              <div className="bg-white px-6 py-4">
-                <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-ink/40">
-                  Renews
-                </p>
-                <p className="mt-1 font-mono text-base text-ink/80">
-                  Mar 14, 2027
-                </p>
-              </div>
-              <div className="bg-white px-6 py-4">
-                <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-ink/40">
-                  Notice window
-                </p>
-                <p className="mt-1 font-mono text-base text-ink/80">60 days</p>
-              </div>
-            </div>
+            sm:left-14
+            sm:max-w-[320px]
 
-            <div className="mx-4 my-4 rounded-[4px] bg-navy px-5 py-4">
-              <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-amber-light/80">
-                Last safe cancel date
-              </p>
-              <div className="mt-1 flex items-baseline justify-between">
-                <p className="font-mono text-xl text-paper">Jan 13, 2027</p>
-                <p className="font-mono text-[12px] text-amber-light">
-                  42 days left
-                </p>
-              </div>
-            </div>
+            lg:left-[7%]
+            lg:max-w-[360px]
+
+            xl:left-[9%]
+          "
+          >
+            <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-ink/40 sm:text-[11px]">
+              The problem
+            </p>
+
+            <p className="mt-3 font-display text-2xl font-medium leading-[1.05] tracking-[-0.03em] text-ink sm:text-3xl lg:text-5xl">
+              Your renewal date isn&apos;t always the date you need to remember.
+            </p>
+
+            <p className="mt-4 max-w-[280px] font-body text-xs leading-5 text-ink/50 sm:text-sm">
+              The important date is often buried in the notice period of your
+              contract.
+            </p>
+          </div>
+
+          {/* =========================================
+      CONTRACT CARD
+  ========================================= */}
+
+          <div
+            data-hero="card"
+            className="
+            absolute
+            z-20
+
+            /*
+            * =====================================
+            * CARD POSITION
+            * =====================================
+            *
+            * The card has been moved LEFT so it
+            * sits closer to the copy.
+            *
+            * Smaller `right` → move card RIGHT
+            * Larger `right`  → move card LEFT
+            *
+            * `top` controls the resting height.
+            * This is intentionally unchanged.
+            */
+
+            right-[3%]
+            top-[18%]
+
+            w-[min(420px,46%)]
+
+            will-change-transform
+
+            sm:right-[4%]
+            sm:top-[15%]
+
+            lg:right-[6%]
+            lg:top-[12%]
+
+            xl:right-[7%]
+          "
+          >
+            <ContractCard />
           </div>
         </div>
+        ```
       </div>
     </section>
   );

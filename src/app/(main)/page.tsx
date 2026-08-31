@@ -4,15 +4,23 @@ import Stats from "@/components/Stats";
 import Purpose from "@/components/Purpose";
 import HowItWorks from "@/components/HowItWorks";
 import FAQ from "@/components/FAQ";
+import DateScene from "@/components/landing/DateScene";
+import HowItWorksScene from "@/components/landing/HowItWorksScene";
+import StatsScene from "@/components/landing/StatsScene";
+import PurposeScene from "@/components/landing/PurposeScene";
+import TeamWorkspaceScene from "@/components/landing/TeamWorkspaceScene";
+import FinalCTA from "@/components/landing/FinalCTAScene";
 
 export default function Home() {
   return (
-    <main className="flex flex-col items-center mx-auto justify-center bg-paper font-body">
+    <main className="bg-paper font-body">
       <Hero />
-      <Hook />
-      <Stats />
-      <Purpose />
-      <HowItWorks />
+      <DateScene />
+      <HowItWorksScene />
+      <StatsScene />
+      <PurposeScene />
+      <TeamWorkspaceScene />
+      <FinalCTA />
       <FAQ />
     </main>
   );
