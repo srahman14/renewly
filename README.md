@@ -118,8 +118,6 @@ NEXT_PUBLIC_APP_URL=             # used to build invite links in emails
 
 `SUPABASE_SERVICE_ROLE_KEY` and `RESEND_API_KEY` are only ever read inside `app/api/*` route handlers or `lib/supabase/admin.ts`.
 
-Database schema and RLS policies currently need to be applied by hand via the Supabase SQL editor before running the app against a fresh project, since there's no committed migration history yet (see Known limitations).
-
 ### Project structure
 
 ```
