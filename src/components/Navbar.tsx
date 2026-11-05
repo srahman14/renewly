@@ -1,12 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 
 const NAV_LINKS = [
-  { label: "Purpose", href: "#purpose" },
-  { label: "How it works", href: "#how-it-works" },
-  { label: "FAQ", href: "#faq" },
+  { label: "Purpose", href: "/#purpose" },
+  { label: "How it works", href: "/#how-it-works" },
+  { label: "FAQ", href: "/#faq" },
 ];
 
 export default function Navbar() {
@@ -18,7 +19,7 @@ export default function Navbar() {
         className="mx-auto flex max-w-content items-center justify-between px-6 py-4 md:px-10"
         aria-label="Primary"
       >
-        <a
+        <Link
           href="/"
         >
           {/* <span
@@ -29,13 +30,13 @@ export default function Navbar() {
           </span> */}
               <Image
                 src="/icons/watermark-logo-dark.png"
-                alt="icon"
+                alt="Renewly"
                 width={140}
                 height={48}
                 className="object-contain shrink-0 cursor-pointer"
                 priority
               />
-        </a>
+        </Link>
 
         <div className="hidden items-center gap-8 md:flex">
           {NAV_LINKS.map((link) => (
@@ -100,7 +101,7 @@ export default function Navbar() {
               </a>
             ))}
             <a
-              href="#hero-cta"
+              href="/register"
               onClick={() => setOpen(false)}
               className="mt-2 rounded-[4px] bg-ink px-4 py-2 text-center font-body text-[15px] font-medium text-paper"
             >

@@ -73,17 +73,9 @@ export function AuthBrandPanel() {
         </ul>
       </div>
 
-      <div className="relative flex items-center gap-3 text-sm text-paper/60">
-        <div className="flex -space-x-2" aria-hidden="true">
-          {['bg-amber', 'bg-teal', 'bg-amber-light'].map((c) => (
-            <span
-              key={c}
-              className={`size-7 rounded-full border-2 border-navy ${c} dark:border-navy-light`}
-            />
-          ))}
-        </div>
-        <p>Trusted by lean teams tracking 2,000+ contracts.</p>
-      </div>
+      <p className="relative font-mono text-xs text-paper/40">
+        Built with Next.js, Supabase and Resend.
+      </p>
     </aside>
   )
 }

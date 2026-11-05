@@ -374,7 +374,7 @@ export default function RenewalsPage() {
             <h2 className="mt-5 font-display text-2xl font-medium text-ink">All clear</h2>
             <p className="mx-auto mt-3 max-w-md font-body text-sm text-ink/60">
               No contracts are due today or within the next {SOON_BUFFER_DAYS} days. If
-              something's further out than that, it'll show up here as it gets closer —
+              something&apos;s further out than that, it&apos;ll show up here as it gets closer —
               or view every tracked contract in the meantime.
             </p>
             <Link

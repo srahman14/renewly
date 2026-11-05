@@ -9,7 +9,7 @@ const FAQS = [
   },
   {
     q: "Does Renewly handle rolling or monthly contracts, not just annual ones?",
-    a: "Yes. Rolling monthly terms, quarterly billing, and annual contracts are all normalized so you can compare them on one spend view, and each gets its own deadline logic — including terms that only accept notice on the 1st of the month.",
+    a: "Yes. Monthly, quarterly and annual contracts are all normalised to a monthly cost so you can compare them in one spend view, and each one gets its next renewal and notice deadline worked out from its own billing cycle.",
   },
   {
     q: "What happens if I change a renewal date after a reminder is already scheduled?",
@@ -17,7 +17,7 @@ const FAQS = [
   },
   {
     q: "Can I control who sees or edits what inside my organization?",
-    a: "Yes. Owners can add, edit, and delete contracts. Members can view and flag them. You can also scope someone to only see the contracts they own — enforced at both the interface and the database level.",
+    a: "Yes. There are three roles. Owners and admins can add, edit, mute and delete contracts and invite people. Members can view everything in the workspace but can't change it. Only the owner can change organisation settings.",
   },
   {
     q: "Is our contract data isolated from other teams on Renewly?",
@@ -33,7 +33,7 @@ export default function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="w-full flex items-center py-20 mb-40 md:py-12">
+    <section id="faq" className="w-full flex items-center py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-6 md:px-10">
         <div className="max-w-xl">
           <p className="font-mono text-[12px] uppercase tracking-[0.1em] text-ink/45">

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { type EmailOtpType } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
+import { safeRedirectPath } from '@/lib/utils/redirect'
 
 // Receives the click from Supabase's confirmation email and finishes
 // signing the user in, then sends them to wherever signUp()'s
@@ -15,10 +16,10 @@ export async function GET(request: Request) {
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType | null
 
-  // `next` is always a path this app generated itself in emailRedirectTo —
-  // never taken from an untrusted external source — so redirecting to it
-  // directly is safe.
-  const next = searchParams.get('next') ?? '/onboarding'
+  // `next` normally comes from our own emailRedirectTo, but it's still a
+  // query param anyone can edit. Without the check, `next=@evil.com`
+  // turns `${origin}${next}` into a link to another site.
+  const next = safeRedirectPath(searchParams.get('next'), '/onboarding')
 
   const supabase = await createClient()
 

@@ -14,7 +14,9 @@ type DueContract = {
 
 export async function GET(req: Request) {
   const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const secret = process.env.CRON_SECRET
+  // If CRON_SECRET were missing, the old check accepted "Bearer undefined".
+  if (!secret || authHeader !== `Bearer ${secret}`) {
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
@@ -33,7 +35,6 @@ export async function GET(req: Request) {
   }
 
   const dueContracts = (due ?? []) as DueContract[]
-  console.log('DEBUG dueContracts:', JSON.stringify(dueContracts, null, 2))
   if (dueContracts.length === 0) {
     return NextResponse.json({ sent: 0, contractsNotified: 0 })
   }
@@ -65,7 +66,10 @@ export async function GET(req: Request) {
     }
 
     try {
-      await resend.emails.send({
+      // Resend reports failures in the return value, not by throwing, so
+      // check it — otherwise failed sends were logged as "notified" and
+      // never retried.
+      const { error: sendError } = await resend.emails.send({
         from: 'onboarding@resend.dev',
         to: email,
         subject: `${contracts.length} contract${contracts.length > 1 ? 's' : ''} need attention`,
@@ -73,6 +77,10 @@ export async function GET(req: Request) {
           .map(c => `${c.company} — ${c.contract_name} — cancel by ${c.notify_on}`)
           .join('\n'), // placeholder body, real template comes later
       })
+      if (sendError) {
+        console.error(`failed sending to ${userId}`, sendError)
+        continue
+      }
       emailsSent++
       contracts.forEach(c =>
         logRows.push({ contract_id: c.contract_id, org_id: c.org_id, notify_on: c.notify_on })

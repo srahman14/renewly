@@ -65,7 +65,7 @@ const SourcesPage = () => {
       </h1>
       <p className="mt-4 text-zinc-600 leading-relaxed max-w-xl">
         Every stat we cite on our site is pulled directly from a published
-        study, survey, or regulation. Here's the full list, so you can check the
+        study, survey, or regulation. Here&apos;s the full list, so you can check the
         numbers yourself.
       </p>
 
@@ -103,7 +103,7 @@ const SourcesPage = () => {
 
       <p className="mt-16 text-xs text-zinc-400 max-w-xl">
         Last checked July 2026. If any of these figures are updated by their
-        original publisher, we'll update this page accordingly.
+        original publisher, we&apos;ll update this page accordingly.
       </p>
     </div>
   );

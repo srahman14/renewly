@@ -44,6 +44,70 @@ import { can } from "@/lib/permissions";
 
 const PREVIEW_COUNT = 4;
 
+// Declared at module level: defining components inside the page
+// remounted them (and reset their state) on every render.
+function StatCard({
+  label,
+  value,
+  footnote,
+}: {
+  label: string;
+  value: string;
+  footnote?: string;
+}) {
+  return (
+    <div className="bg-paper px-6 py-8">
+      <dt className="sr-only">{label}</dt>
+      <dd className="font-mono text-3xl text-ink sm:text-[2.25rem]">{value}</dd>
+      <p className="mt-3 font-body text-sm leading-relaxed text-ink/60">{label}</p>
+      {footnote && <p className="mt-1 font-mono text-[11px] text-ink/35">{footnote}</p>}
+    </div>
+  );
+}
+
+function DeadlineCard({
+  contract,
+  ownerNames,
+}: {
+  contract: Contract;
+  ownerNames: string;
+}) {
+
+  return (
+    <div className="rounded-md border border-ink/10 bg-white shadow-[0_20px_45px_-25px_rgba(18,20,28,0.35)]">
+      <div className="flex items-center justify-between px-5 pt-4">
+        <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink/40">
+          {contract.team}
+        </span>
+        <CategoryBadge category={contract.category} />
+      </div>
+
+      <div className="px-5 pb-4 pt-2">
+        <p className="font-display text-lg font-medium text-ink">{contract.company}</p>
+        <p className="mt-1 font-body text-sm text-ink/50">{contract.name}</p>
+        <p className="mt-1 font-body text-sm text-ink/50">Owner: {ownerNames || "—"}</p>
+      </div>
+
+      <div className="perforated-edge" />
+
+      <div className="mx-4 my-4 rounded-[4px] bg-navy px-4 py-3">
+        <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-amber-light/80">
+          Last safe cancel date
+        </p>
+
+        <div className="mt-1 flex items-baseline justify-between">
+          <p className="font-mono text-base text-paper">{formatDate(getDeadlineDate(contract))}</p>
+          <p className="font-mono text-[11px] text-amber-light">{deadlineLabel(contract)}</p>
+        </div>
+      </div>
+
+      <div className="px-5 pb-4">
+        <RenewalWarningBadge contract={contract} />
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const userId = useAuthStore((state) => state.user?.id ?? null);
   const { data: profile } = useUserProfileQuery(userId);
@@ -168,65 +232,6 @@ export default function DashboardPage() {
   const previewContracts = sortedByDeadline.slice(0, PREVIEW_COUNT);
   const remainingCount = Math.max(0, contracts.length - previewContracts.length);
 
-  function StatCard({
-    label,
-    value,
-    footnote,
-  }: {
-    label: string;
-    value: string;
-    footnote?: string;
-  }) {
-    return (
-      <div className="bg-paper px-6 py-8">
-        <dt className="sr-only">{label}</dt>
-        <dd className="font-mono text-3xl text-ink sm:text-[2.25rem]">{value}</dd>
-        <p className="mt-3 font-body text-sm leading-relaxed text-ink/60">{label}</p>
-        {footnote && <p className="mt-1 font-mono text-[11px] text-ink/35">{footnote}</p>}
-      </div>
-    );
-  }
-
-  function DeadlineCard({ contract }: { contract: Contract }) {
-    const ownerNames = contract.ownerIds
-      .map((id) => nameByUserId.get(id) ?? "Unknown")
-      .join(", ");
-
-    return (
-      <div className="rounded-md border border-ink/10 bg-white shadow-[0_20px_45px_-25px_rgba(18,20,28,0.35)]">
-        <div className="flex items-center justify-between px-5 pt-4">
-          <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink/40">
-            {contract.team}
-          </span>
-          <CategoryBadge category={contract.category} />
-        </div>
-
-        <div className="px-5 pb-4 pt-2">
-          <p className="font-display text-lg font-medium text-ink">{contract.company}</p>
-          <p className="mt-1 font-body text-sm text-ink/50">{contract.name}</p>
-          <p className="mt-1 font-body text-sm text-ink/50">Owner: {ownerNames || "—"}</p>
-        </div>
-
-        <div className="perforated-edge" />
-
-        <div className="mx-4 my-4 rounded-[4px] bg-navy px-4 py-3">
-          <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-amber-light/80">
-            Last safe cancel date
-          </p>
-
-          <div className="mt-1 flex items-baseline justify-between">
-            <p className="font-mono text-base text-paper">{formatDate(getDeadlineDate(contract))}</p>
-            <p className="font-mono text-[11px] text-amber-light">{deadlineLabel(contract)}</p>
-          </div>
-        </div>
-
-        <div className="px-5 pb-4">
-          <RenewalWarningBadge contract={contract} />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-paper-muted">
       <main className="mx-auto max-w-7xl px-6 py-10 md:px-10 md:py-14">
@@ -234,7 +239,7 @@ export default function DashboardPage() {
           <div>
             <p className="font-mono text-[12px] uppercase tracking-[0.1em] text-ink/45">Overview</p>
             <h1 className="mt-3 font-display text-3xl font-medium tracking-tight text-ink sm:text-4xl">
-              Good morning.
+              {profile?.full_name ? `Welcome back, ${profile.full_name.split(" ")[0]}.` : "Welcome back."}
             </h1>
             <p className="mt-2 max-w-lg font-body text-[15px] leading-relaxed text-ink/60">
               {isLoading
@@ -299,7 +304,13 @@ export default function DashboardPage() {
 
               <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {sortedByDeadline.slice(0, 3).map((contract) => (
-                  <DeadlineCard key={contract.id} contract={contract} />
+                  <DeadlineCard
+                    key={contract.id}
+                    contract={contract}
+                    ownerNames={contract.ownerIds
+                      .map((id) => nameByUserId.get(id) ?? "Unknown")
+                      .join(", ")}
+                  />
                 ))}
               </div>
             </section>
@@ -314,12 +325,6 @@ export default function DashboardPage() {
                   <ArrowRight className="h-4 w-4 text-ink/40 transition-transform group-hover:translate-x-0.5 group-hover:text-navy" />
                 </Link>
 
-                <Link
-                  href="/dashboard/contracts"
-                  className="font-mono text-[12px] text-ink/50 transition-colors hover:text-ink"
-                >
-                  View all →
-                </Link>
               </div>
 
               <div className="mt-6 overflow-hidden rounded-md border border-line bg-white">

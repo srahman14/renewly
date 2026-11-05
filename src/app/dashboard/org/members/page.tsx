@@ -56,7 +56,7 @@ export default function OrgMembersPage() {
     .slice(0, 6);
 
   return (
-    <div className="w-full px-8 py-10 lg:px-12">
+    <div className="w-full min-w-0 px-6 py-10 md:px-10 lg:px-12">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="font-mono text-[12px] uppercase tracking-[0.1em] text-ink/45">
@@ -91,8 +91,8 @@ export default function OrgMembersPage() {
         />
       </div>
 
-      <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_340px]">
-        <div className="flex flex-col gap-8">
+      <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="flex min-w-0 flex-col gap-8">
           <SectionCard
             title="Members"
             description="Everyone with access to this workspace."
@@ -110,7 +110,7 @@ export default function OrgMembersPage() {
 
           <SectionCard
             title="Recent activity"
-            description="A preview — full activity history is coming later."
+            description="Latest joins and invites."
           >
             {activity.length === 0 ? (
               <p className="py-4 text-center font-mono text-sm text-ink/40">

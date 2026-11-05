@@ -12,15 +12,12 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import {
-  Contract,
-  currency,
-  CATEGORIES,
-} from "@/lib/contracts";
+import { Contract, currency } from "@/lib/contracts";
 import { CategoryBadge } from "@/components/ContractUI";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { useUserProfileQuery } from "@/lib/queries/user.queries";
 import { useContractsQuery } from "@/lib/queries/contract.queries";
+import { useOrgMembersQuery } from "@/lib/queries/org.queries";
 
 // Real hex behind the Tailwind palette names already assigned to each
 // category in CATEGORIES (violet-500, blue-500, sky-500, ...). Recharts
@@ -51,7 +48,9 @@ function getCategoryHex(category: string): string {
 // Custom tooltip in the site's own voice (mono, ink-on-paper, hairline
 // border) rather than Recharts' default white box + drop shadow, which
 // reads as a generic chart-library default against this palette.
-function ChartTooltip({ active, payload }: any) {
+type TooltipEntry = { name?: string; value: number; payload?: { label?: string } };
+
+function ChartTooltip({ active, payload }: { active?: boolean; payload?: TooltipEntry[] }) {
   if (!active || !payload || !payload.length) return null;
   const entry = payload[0];
   return (
@@ -106,6 +105,7 @@ export default function SpendAnalyticsPage() {
   const orgId = profile?.org_id ?? null;
 
   const { data: contracts = [], isLoading, isError } = useContractsQuery(orgId);
+  const { data: members = [] } = useOrgMembersQuery(orgId);
 
   const active = useMemo(
     () => contracts.filter((c) => c.status !== "cancelled"),
@@ -137,16 +137,26 @@ export default function SpendAnalyticsPage() {
       .sort((a, b) => b.value - a.value);
   }, [active]);
 
+  // Grouped by owner name, not by the ownerIds array itself (arrays are
+  // compared by reference in a Map, so every contract became its own
+  // unlabelled bar). A contract with several owners splits its spend
+  // evenly between them so the bars still add up to the total.
   const byOwner = useMemo(() => {
-    const map = new Map<string[], number>();
+    const nameById = new Map(members.map((m) => [m.userId, m.fullName || "Unnamed"]));
+    const map = new Map<string, number>();
     for (const c of active) {
-      map.set(c.ownerIds || "Unassigned", (map.get(c.ownerIds || "Unassigned") ?? 0) + c.monthlySpend);
+      const owners = c.ownerIds?.length ? c.ownerIds : [null];
+      const share = c.monthlySpend / owners.length;
+      for (const id of owners) {
+        const label = id ? nameById.get(id) ?? "Former member" : "Unassigned";
+        map.set(label, (map.get(label) ?? 0) + share);
+      }
     }
     return Array.from(map.entries())
-      .map(([label, value]) => ({ label, value }))
+      .map(([label, value]) => ({ label, value: Math.round(value * 100) / 100 }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 8);
-  }, [active]);
+  }, [active, members]);
 
   const topFive = useMemo(
     () => [...active].sort((a, b) => b.monthlySpend - a.monthlySpend).slice(0, 5),
@@ -201,7 +211,7 @@ export default function SpendAnalyticsPage() {
           <div className="mt-14 rounded-md border border-line bg-white px-6 py-16 text-center">
             <h2 className="font-display text-2xl font-medium text-ink">Nothing to analyse yet</h2>
             <p className="mx-auto mt-3 max-w-md font-body text-sm text-ink/60">
-              Once you've added a contract or two, this page will break down spend by category,
+              Once you&apos;ve added a contract or two, this page will break down spend by category,
               owner, and cost automatically.
             </p>
           </div>
@@ -295,7 +305,7 @@ export default function SpendAnalyticsPage() {
                       <YAxis
                         type="category"
                         dataKey="label"
-                        width={90}
+                        width={110}
                         tickLine={false}
                         axisLine={false}
                         tick={{ fontSize: 11, fontFamily: "var(--font-mono)", fill: "#12141C99" }}

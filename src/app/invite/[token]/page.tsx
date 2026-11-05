@@ -121,12 +121,12 @@ export default function InvitePage({
       {isSwitchingOrgs && !confirmLeave && (
         <div className="mt-6 rounded-md border border-amber/40 bg-amber/10 px-4 py-3">
           <p className="font-body text-sm font-medium text-ink">
-            You're currently part of another workspace.
+            You&apos;re currently part of another workspace.
           </p>
           <p className="mt-1 font-body text-sm leading-relaxed text-ink/60">
             Joining {preview.orgName} will remove you from{" "}
             {preview.viewerCurrentOrgName ?? "your current workspace"}. This
-            can't be undone —{" "}
+            can&apos;t be undone —{" "}
             {preview.viewerCurrentOrgWillBeDeleted
               ? "since you're its only member, that workspace and all its contracts will be permanently deleted."
               : "the workspace will remain for its other members, but you'll lose access to it."}
@@ -189,7 +189,7 @@ function InviteHeader({
       </div>
       <div>
         <p className="font-mono text-[12px] uppercase tracking-[0.1em] text-ink/45">
-          You're invited
+          You&apos;re invited
         </p>
         <h1 className="mt-2 font-display text-2xl font-medium tracking-tight text-ink">
           Join {preview.orgName}
