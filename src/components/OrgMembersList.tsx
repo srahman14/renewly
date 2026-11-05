@@ -52,7 +52,7 @@ export function OrgMembersList({ orgId, currentUserId, currentUserRole }: OrgMem
   }
 
   if (isError) {
-    return <p className="py-6 text-center font-mono text-sm text-ink/40">Couldn't load members.</p>;
+    return <p className="py-6 text-center font-mono text-sm text-ink/40">Couldn&apos;t load members.</p>;
   }
 
   return (
@@ -173,24 +173,24 @@ export function OrgMembersList({ orgId, currentUserId, currentUserRole }: OrgMem
       {pendingInvites.map((invite) => (
         <li
           key={invite.id}
-          className="flex items-center justify-between px-5 py-3.5 opacity-70 transition hover:bg-paper/60 hover:opacity-100"
+          className="flex items-center justify-between gap-3 px-5 py-3.5 opacity-70 transition hover:bg-paper/60 hover:opacity-100"
         >
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <Avatar className="size-10">
               <AvatarFallback className="bg-ink/10 font-display text-sm font-semibold text-ink/50">
                 {initialsFromName(invite.email)}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <p className="font-body text-sm font-medium text-ink">{invite.email}</p>
+            <div className="min-w-0">
+              <p className="truncate font-body text-sm font-medium text-ink">{invite.email}</p>
               <p className="mt-0.5 font-mono text-xs text-ink/40">
                 Invited {new Date(invite.createdAt).toLocaleDateString()}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="rounded-full bg-ink/5 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.05em] text-ink/50">
+          <div className="flex shrink-0 items-center gap-3">
+            <span className="whitespace-nowrap rounded-full bg-ink/5 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.05em] text-ink/50">
               Pending · {invite.role}
             </span>
 

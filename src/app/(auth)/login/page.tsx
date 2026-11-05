@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { redirect, useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Mail } from 'lucide-react'
 import { Suspense, useState } from 'react'
 import type { FormEvent } from 'react'
@@ -10,6 +10,7 @@ import { Logo } from '@/components/renewly/logo'
 import { PasswordField, TextField } from '@/components/renewly/form-field'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/lib/stores/auth.store'
+import { safeRedirectPath } from '@/lib/utils/redirect'
 
 function LoginForm() {
   const router = useRouter()
@@ -19,7 +20,8 @@ function LoginForm() {
   const [formError, setFormError] = useState<string | null>(null)
   // For when user is invited and they click login will be redirected to invite page
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect");
+  const redirectParam = searchParams.get("redirect");
+  const redirectTo = redirectParam ? safeRedirectPath(redirectParam, "/dashboard") : null;
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setFormError(null)
@@ -56,7 +58,7 @@ function LoginForm() {
               Sign in to Renewly
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-ink/60 dark:text-paper/60">
-              Pick up where you left off — check what's renewing soon.
+              Pick up where you left off — check what&apos;s renewing soon.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
@@ -105,7 +107,7 @@ function LoginForm() {
             <p className="mt-8 text-center text-sm text-ink/60 dark:text-paper/60">
               Don&apos;t have an account?{' '}
               <Link
-                href="/register"
+                href={redirectTo ? `/register?redirect=${encodeURIComponent(redirectTo)}` : '/register'}
                 className="font-medium text-teal underline-offset-4 hover:underline dark:text-teal-light"
               >
                 Sign up
@@ -124,7 +126,7 @@ function LoginForm() {
   )
 }
 
-export default function RegisterPage() {
+export default function LoginPage() {
   return (
     <Suspense fallback={null}>
       <LoginForm />

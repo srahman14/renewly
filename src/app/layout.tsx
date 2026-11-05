@@ -5,7 +5,13 @@ import { AuthListener } from "@/components/renewly/auth-listener";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "renewly",
+  // Lets Next turn the opengraph-image file into an absolute URL that
+  // link previews (LinkedIn, Slack, iMessage) can actually fetch.
+  metadataBase: new URL("https://therenewly.vercel.app"),
+  title: {
+    default: "Renewly | Know your cancellation deadlines",
+    template: "%s | Renewly",
+  },
   description: "Track every contract's real cancellation deadline, not just its renewal date.",
 
   appleWebApp: {

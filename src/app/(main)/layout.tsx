@@ -4,8 +4,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "renewly",
-  description: "personal renewal radar - never forget an auto-renewal again.",
+  description: "Track every contract's real cancellation deadline, not just its renewal date.",
 };
 
 export default function LandingLayout({

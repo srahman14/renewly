@@ -1,6 +1,5 @@
 import { createClient } from "../supabase/client";
 import {
-  can,
   canChangeRole,
   canRemoveMember,
   canReceiveOwnership,

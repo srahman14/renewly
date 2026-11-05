@@ -1,20 +1,18 @@
+import Link from "next/link";
+
 const FOOTER_LINKS = [
-  { label: "Purpose", href: "#purpose" },
-  { label: "How it works", href: "#how-it-works" },
+  { label: "Purpose", href: "/#purpose" },
+  { label: "How it works", href: "/#how-it-works" },
   { label: "Register", href: "/register" },
 ];
 
 const COMPANY_LINKS = [
   { label: "Privacy policy", href: "/privacy" },
-  { label: "T&Cs", href: "/terms" },
-  { label: "Contact", href: "mailto:hello@renewly.app" },
+  { label: "Terms", href: "/terms" },
+  { label: "Sources", href: "/sources" },
 ];
 
-const SOCIALS = [
-  { label: "X", href: "https://x.com" },
-  { label: "LinkedIn", href: "https://linkedin.com" },
-  { label: "GitHub", href: "https://github.com" },
-];
+const REPO_URL = "https://github.com/srahman14/renewly";
 
 export default function Footer() {
   return (
@@ -29,12 +27,12 @@ export default function Footer() {
             Add your first contract in under two minutes and get your first
             deadline calculated on the spot.
           </p>
-          <a
+          <Link
             href="/register"
             className="mt-7 inline-block rounded-[4px] bg-amber px-6 py-3 font-body text-[15px] font-medium text-ink transition-colors hover:bg-amber-light"
           >
             Get started free
-          </a>
+          </Link>
         </div>
 
         {/* Vector illustration echoing the deadline-card motif */}
@@ -132,38 +130,42 @@ export default function Footer() {
             <div className="flex flex-col flex-wrap gap-x-8 gap-y-2">
               <h3 className="text-white">Product</h3>
               {FOOTER_LINKS.map((link) => (
-              <a
+              <Link
                 key={link.href}
                 href={link.href}
                 className="font-body text-sm text-paper/60 transition-colors hover:text-paper"
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
             </div>
             <div className="flex flex-col flex-wrap gap-x-8 gap-y-2">
               <h3 className="text-white">Company</h3>
               {COMPANY_LINKS.map((link) => (
-              <a
+              <Link
                 key={link.href}
                 href={link.href}
                 className="font-body text-sm text-paper/60 transition-colors hover:text-paper"
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
             </div>
             <div className="flex flex-col flex-wrap gap-x-8 gap-y-3">
               <h3 className="text-white">Support</h3>
-              <a
-                className="font-body text-sm text-paper/60 transition-colors hover:text-paper"
-              >
-                Help
-              </a>
-              <a
+              <Link
+                href="/#faq"
                 className="font-body text-sm text-paper/60 transition-colors hover:text-paper"
               >
                 FAQ
+              </Link>
+              <a
+                href={`${REPO_URL}/issues`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-body text-sm text-paper/60 transition-colors hover:text-paper"
+              >
+                Report an issue
               </a>
             </div>
             
@@ -176,17 +178,14 @@ export default function Footer() {
             <p className="font-mono text-xs text-paper/40">
               © {new Date().getFullYear()} Renewly. All rights reserved.
             </p>
-            <div className="flex gap-6">
-              {SOCIALS.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  className="font-mono text-xs text-paper/50 transition-colors hover:text-paper"
-                >
-                  {social.label}
-                </a>
-              ))}
-            </div>
+            <a
+              href={REPO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-mono text-xs text-paper/50 transition-colors hover:text-paper"
+            >
+              GitHub
+            </a>
           </div>
         </div>
       </div>

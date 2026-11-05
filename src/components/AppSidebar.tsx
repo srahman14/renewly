@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
@@ -21,7 +21,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   Collapsible,
@@ -29,107 +28,47 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
   ChevronDown,
-  ChevronsUpDown,
-  Plus,
-  Check,
-  User2,
   LayoutDashboard,
   FileText,
   CalendarClock,
   BarChart3,
-  Bell,
   Users,
   Settings,
   ShieldCheck,
   Building2,
-  Plug,
-  LifeBuoy,
-  BookOpen,
-  MessageCircle,
+  LogOut,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { useUserProfileQuery } from "@/lib/queries/user.queries";
 import { useContractsQuery } from "@/lib/queries/contract.queries";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { useOrgQuery } from "@/lib/queries/org.queries";
+import { isFlagged, isSoon, isMuted } from "@/lib/contracts";
+import { Avatar, AvatarFallback } from "./ui/avatar";
 
-type Workspace = {
-  id: string;
-  name: string;
-};
-
-type NavItem = {
-  title: string;
-  url: string;
-  icon: typeof CalendarClock;
-  badge?: string;
-};
-
-// Hardcoded default workspace — UI-only state for now
-const initialWorkspaces: Workspace[] = [{ id: "ws_acme", name: "Acme Inc" }];
-
-const renewalsNav: NavItem = {
-  title: "Renewals",
-  url: "/dashboard/renewals",
-  icon: CalendarClock,
-  badge: "3",
-};
-const analyticsNav: NavItem = {
-  title: "Spend Analytics",
-  url: "/dashboard/spend-analytics",
-  icon: BarChart3,
-};
-const alertsNav: NavItem = {
-  title: "Alerts",
-  url: "/dashboard/alerts",
-  icon: Bell,
-  badge: "5",
-};
+// Every link here points at a page that exists. Alerts, Integrations and
+// the Help pages were never built, so they're left out rather than 404ing.
+const appNav = [
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Contracts", url: "/dashboard/contracts", icon: FileText },
+  { title: "Renewals", url: "/dashboard/renewals", icon: CalendarClock },
+  { title: "Spend Analytics", url: "/dashboard/spend-analytics", icon: BarChart3 },
+] as const;
 
 const orgNav = [
   { title: "Members", url: "/dashboard/org/members", icon: Users },
   { title: "Roles & Permissions", url: "/dashboard/org/roles", icon: ShieldCheck },
-  {
-    title: "Organization Settings",
-    url: "/dashboard/settings",
-    icon: Building2,
-  },
-  { title: "Integrations", url: "/org/integrations", icon: Plug },
-];
-
-const helpNav = [
-  { title: "Documentation", url: "/help/docs", icon: BookOpen },
-  { title: "Contact Support", url: "/help/support", icon: MessageCircle },
-];
+  { title: "Settings", url: "/dashboard/settings", icon: Settings },
+] as const;
 
 export function AppSidebar() {
-  const [workspaces, setWorkspaces] = useState<Workspace[]>(initialWorkspaces);
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(
-    initialWorkspaces[0]?.id ?? null
-  )
-  const [isCreateOpen, setIsCreateOpen] = useState(false)
-  const [newWorkspaceName, setNewWorkspaceName] = useState("")
-  // const [activeContractCount, setActiveContractCount] = useState<number | null>(null)
+  const pathname = usePathname();
+  const router = useRouter();
 
   // User related
   const userId = useAuthStore((state) => state.user?.id ?? null);
   const signOut = useAuthStore((state) => state.signOut);
-  const {
-    data: profile,
-    isLoading,
-    isError,
-    error,
-  } = useUserProfileQuery(userId);
+  const { data: profile, isLoading } = useUserProfileQuery(userId);
 
   const orgId = profile?.org_id ?? null
 
@@ -144,30 +83,30 @@ export function AppSidebar() {
   const activeContractCount = contracts.filter(
     (c) => c.status !== "cancelled",
   ).length;
+  // Same rule as the Renewals page: inside the notice window or within
+  // SOON_BUFFER_DAYS of it. Muted contracts don't count, they asked us
+  // to stop nagging.
+  const renewalsDueCount = contracts.filter(
+    (c) => !isMuted(c) && (isFlagged(c) || isSoon(c)),
+  ).length;
 
-  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId)
+  const { data: org } = useOrgQuery(orgId);
 
-
-
-  function handleCreateWorkspace() {
-    const name = newWorkspaceName.trim();
-    if (!name) return;
-    const workspace: Workspace = { id: `ws_${Date.now()}`, name };
-    setWorkspaces((prev) => [...prev, workspace]);
-    setActiveWorkspaceId(workspace.id);
-    setNewWorkspaceName("");
-    setIsCreateOpen(false);
+  async function handleSignOut() {
+    await signOut();
+    router.push("/login");
+    router.refresh();
   }
 
-  const [fullName, setFullName] = useState("");
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (profile?.full_name) setFullName(profile.full_name);
-  }, [profile?.full_name]);
+  const badgeFor = (url: string) =>
+    url === "/dashboard/contracts"
+      ? activeContractCount
+      : url === "/dashboard/renewals"
+        ? renewalsDueCount
+        : 0;
 
   const initials = useMemo(() => {
-    const source = fullName || profile?.full_name || "";
+    const source = profile?.full_name || "";
     return (
       source
         .trim()
@@ -176,92 +115,50 @@ export function AppSidebar() {
         .map((part) => part[0]?.toUpperCase())
         .join("") || "?"
     );
-  }, [fullName, profile?.full_name]);
+  }, [profile?.full_name]);
 
   return (
     <Sidebar className="max-w-content" variant="sidebar">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger render={<SidebarMenuButton />}>
-                <Building2 />
-                <span>
-                  {activeWorkspace ? activeWorkspace.name : "No workspace"}
+            <div className="flex items-center gap-2 px-2 py-1.5">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-navy">
+                <Building2 className="size-4 text-paper" />
+              </div>
+              <div className="flex min-w-0 flex-col">
+                <span className="truncate font-display text-sm font-medium text-ink">
+                  {org?.name ?? (isLoading ? "\u00A0" : "Renewly")}
                 </span>
-                <ChevronsUpDown className="ml-auto" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-[--radix-popper-anchor-width]">
-                {workspaces.length > 0 ? (
-                  workspaces.map((ws) => (
-                    <DropdownMenuItem
-                      key={ws.id}
-                      onClick={() => setActiveWorkspaceId(ws.id)}
-                    >
-                      <span className="flex-1">{ws.name}</span>
-                      {ws.id === activeWorkspaceId && (
-                        <Check className="size-4" />
-                      )}
-                    </DropdownMenuItem>
-                  ))
-                ) : (
-                  <DropdownMenuItem disabled>
-                    <span>No workspaces yet</span>
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setIsCreateOpen(true)}>
-                  <Plus className="size-4" />
-                  <span>Create Workspace</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-ink/40">
+                  Workspace
+                </span>
+              </div>
+            </div>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
 
       <SidebarContent>
-        {/* Primary application nav */}
         <SidebarGroup>
           <SidebarGroupLabel>Application</SidebarGroupLabel>
-          <SidebarGroupAction>
-            <Plus /> <span className="sr-only">Add Contract</span>
-          </SidebarGroupAction>
           <SidebarGroupContent>
             <SidebarMenu>
-              {/* Dashboard */}
-              <SidebarMenuItem>
-                <SidebarMenuButton render={<Link href="/dashboard" />}>
-                  <LayoutDashboard />
-                  <span>Dashboard</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              {/* Contracts */}
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  render={<Link href="/dashboard/contracts" />}
-                >
-                  <FileText />
-                  <span>Contracts</span>
-                </SidebarMenuButton>
-                {activeContractCount > 0 && (
-                  <SidebarMenuBadge>{activeContractCount}</SidebarMenuBadge>
-                )}
-              </SidebarMenuItem>
-
-              {/* Remaining flat items */}
-              {[renewalsNav, analyticsNav, alertsNav].map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton render={<Link href={item.url} />}>
-                    <item.icon />
-                    <span>{item.title}</span>
-                  </SidebarMenuButton>
-                  {"badge" in item && item.badge && (
-                    <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>
-                  )}
-                </SidebarMenuItem>
-              ))}
+              {appNav.map((item) => {
+                const badge = badgeFor(item.url);
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      isActive={pathname === item.url}
+                      render={<Link href={item.url} />}
+                    >
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </SidebarMenuButton>
+                    {badge > 0 && <SidebarMenuBadge>{badge}</SidebarMenuBadge>}
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -280,34 +177,10 @@ export function AppSidebar() {
                 <SidebarMenu>
                   {orgNav.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton render={<Link href={item.url} />}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </CollapsibleContent>
-          </SidebarGroup>
-        </Collapsible>
-
-        {/* Help, collapsible, collapsed by default */}
-        <Collapsible className="group/collapsible mt-auto">
-          <SidebarGroup>
-            <SidebarGroupLabel className="p-0">
-              <CollapsibleTrigger className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                <LifeBuoy className="size-3.5" />
-                Help
-                <ChevronDown className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180 w-4" />
-              </CollapsibleTrigger>
-            </SidebarGroupLabel>
-            <CollapsibleContent>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {helpNav.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton render={<Link href={item.url} />}>
+                      <SidebarMenuButton
+                        isActive={pathname === item.url}
+                        render={<Link href={item.url} />}
+                      >
                         <item.icon />
                         <span>{item.title}</span>
                       </SidebarMenuButton>
@@ -326,12 +199,6 @@ export function AppSidebar() {
             <DropdownMenu>
               <DropdownMenuTrigger render={<SidebarMenuButton />}>
                 <Avatar className="size-8">
-                  {avatarPreview && (
-                    <AvatarImage
-                      src={avatarPreview}
-                      alt={profile?.full_name ?? "You"}
-                    />
-                  )}
                   <AvatarFallback className="bg-navy font-display text-lg font-semibold text-paper">
                     {initials}
                   </AvatarFallback>
@@ -351,7 +218,8 @@ export function AppSidebar() {
                   <Settings className="mr-2 size-4" />
                   <span>Account Settings</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => signOut()}>
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 size-4" />
                   <span>Sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -360,36 +228,6 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarFooter>
 
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create Workspace</DialogTitle>
-            <DialogDescription>
-              Give your workspace a name. You can invite teammates and add
-              contracts after.
-            </DialogDescription>
-          </DialogHeader>
-          <Input
-            placeholder="e.g. Acme Inc"
-            value={newWorkspaceName}
-            onChange={(e) => setNewWorkspaceName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleCreateWorkspace();
-            }}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCreateWorkspace}
-              disabled={!newWorkspaceName.trim()}
-            >
-              Create
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </Sidebar>
   );
 }

@@ -49,10 +49,11 @@ export default function Stats() {
           ))}
         </dl>
 
-        <Link href={"/sources"}>
-          <p className="mt-6 w-24 text-xs cursor-pointer hover:text-ink/50 font-body text-ink/20 underline underline-offset-4 decoration-gray-300/60">
-            See sources
-          </p>
+        <Link
+          href="/sources"
+          className="mt-6 inline-block font-body text-xs text-ink/50 underline decoration-ink/20 underline-offset-4 transition-colors hover:text-ink"
+        >
+          See sources
         </Link>
       </div>
     </section>

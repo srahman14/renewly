@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import { useEffect } from "react";
 import { Bell, BellOff, MoreHorizontal } from "lucide-react";
 import {
@@ -157,13 +158,12 @@ export function MuteToast({
 }
 
 export function CategoryBadge({ category }: { category: string }) {
-  const Icon = getCategoryIcon(category);
   const dotClass = getCategoryDotClass(category);
 
   return (
-    <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-line bg-white px-2.5 py-1 font-mono text-[11px] text-ink/55">
+    <span className="inline-flex w-fit shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-white px-2.5 py-1 font-mono text-[11px] text-ink/55">
       <span className={`h-1.5 w-1.5 rounded-full ${dotClass}`} aria-hidden="true" />
-      <Icon className="h-3 w-3 text-ink/45" />
+      {createElement(getCategoryIcon(category), { className: "h-3 w-3 text-ink/45" })}
       {category || "Uncategorised"}
     </span>
   );

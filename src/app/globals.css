@@ -6,6 +6,10 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
+  /* Shared page width: max-w-content was used but never defined, so the
+     navbar, hero and footer ran full width while other sections stopped
+     at 80rem (max-w-7xl). */
+  --container-content: 80rem;
   --color-ink: #12141C;
   --color-paper: #F2F3F1;
   --color-paper-muted: #E7E5DD;

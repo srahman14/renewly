@@ -1,18 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ListFilter } from "lucide-react";
 import ContractForm from "@/components/ContractForm";
 import ContractDetailsDialog from "@/components/ContractDetailsDialog";
 import {
   Contract,
-  Status,
-  STORAGE_KEY,
   currency,
   formatDate,
   getNextRenewalDate,
   daysUntilDeadline,
-  deadlineLabel,
   daysUntilRenewalLabel,
   isFlagged,
   isMuted,
@@ -36,11 +33,9 @@ import {
 } from "@/components/ui/select";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { useUserProfileQuery } from "@/lib/queries/user.queries";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   useContractsQuery,
   useCreateContractMutation,
-  contractKeys,
   useUpdateContractMutation,
   useDeleteContractMutation,
 } from "@/lib/queries/contract.queries";
@@ -71,8 +66,6 @@ export default function AllContractsPage() {
   const userId = useAuthStore((state) => state.user?.id ?? null);
   const { data: profile } = useUserProfileQuery(userId);
   const orgId = profile?.org_id ?? null;
-
-  const queryClient = useQueryClient();
 
   const { data: contracts = [], isLoading, isError } = useContractsQuery(orgId);
   const createContractMutation = useCreateContractMutation(orgId);

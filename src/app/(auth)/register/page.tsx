@@ -10,6 +10,7 @@ import { Logo } from '@/components/renewly/logo'
 import { PasswordField, TextField } from '@/components/renewly/form-field'
 import { Button } from '@/components/ui/button'
 import { useAuthStore, type AccountType } from '@/lib/stores/auth.store'
+import { safeRedirectPath } from '@/lib/utils/redirect'
 
 const COPY: Record<AccountType, { eyebrow: string; heading: string; subtext: string; cta: string }> = {
   individual: {
@@ -38,7 +39,8 @@ function RegisterForm() {
 
   // For when user is invited and they click login will be redirected to invite page
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirect')
+  const redirectParam = searchParams.get('redirect')
+  const redirectTo = redirectParam ? safeRedirectPath(redirectParam, '/onboarding') : null
   const inviteEmail = searchParams.get('email')
   const copy = COPY[accountType]
 
@@ -51,6 +53,21 @@ function RegisterForm() {
     const email = String(formData.get('email') ?? '').trim()
     const password = String(formData.get('password') ?? '')
     const companyName = String(formData.get('company') ?? '').trim()
+
+    // The form is noValidate (custom error UI), so `required` on the
+    // checkbox and fields isn't enforced by the browser. Check here.
+    if (!fullName || !email || !password) {
+      setFormError('Fill in your name, email and password.')
+      return
+    }
+    if (password.length < 8) {
+      setFormError('Password needs at least 8 characters.')
+      return
+    }
+    if (formData.get('terms') !== 'on') {
+      setFormError('Please agree to the Terms and Privacy Policy.')
+      return
+    }
 
     if (accountType === 'team' && !companyName) {
       setFormError('Company name is required for a team workspace.')
@@ -202,7 +219,10 @@ function RegisterForm() {
                 required
                 icon={<Mail className="size-4" />}
                 defaultValue={inviteEmail ?? undefined}
-                disabled={!!inviteEmail}
+                // readOnly, not disabled: disabled inputs are left out of
+                // FormData, so invited users signed up with an empty email
+                // and Supabase rejected it as an anonymous sign-up.
+                readOnly={!!inviteEmail}
               />
               {accountType === 'team' && (
                 <TextField
@@ -270,7 +290,7 @@ function RegisterForm() {
             <p className="mt-8 text-center text-sm text-ink/60 dark:text-paper/60">
               Already have an account?{' '}
               <Link
-                href="/login"
+                href={redirectTo ? `/login?redirect=${encodeURIComponent(redirectTo)}` : '/login'}
                 className="font-medium text-teal underline-offset-4 hover:underline dark:text-teal-light"
               >
                 Sign in
